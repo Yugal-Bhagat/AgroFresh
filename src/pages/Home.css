@@ -1,0 +1,184 @@
+.hero{
+height:90vh;
+width:100%;
+position:relative;
+overflow:hidden;
+background:#0a0e27;
+}
+
+.slide{
+position:absolute;
+width:100%;
+height:100%;
+background-size:cover;
+background-position:center;
+background-repeat:no-repeat;
+opacity:0;
+transition:opacity 1s ease-in-out, transform 1.5s ease-in-out;
+transform:scale(1.05);
+}
+
+.slide.active{
+opacity:1;
+transform:scale(1);
+}
+
+/* Dark Gradient Overlay */
+
+.overlay{
+position:absolute;
+width:100%;
+height:100%;
+background:linear-gradient(
+135deg,
+rgba(0,0,0,0.7),
+rgba(46,125,50,0.2)
+);
+backdrop-filter:blur(2px);
+}
+
+/* Hero Content */
+
+.hero-content{
+position:absolute;
+top:50%;
+left:8%;
+transform:translateY(-50%);
+color:white;
+max-width:600px;
+z-index:2;
+animation:slideInLeft 0.8s ease-out;
+}
+
+.hero-content h1{
+font-size:56px;
+font-weight:700;
+margin-bottom:20px;
+line-height:1.2;
+background:linear-gradient(135deg, #fff, #a5d6a7);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+background-clip:text;
+animation:fadeUpText 0.8s ease-out 0.2s backwards;
+}
+
+.hero-content p{
+font-size:20px;
+margin-bottom:30px;
+color:#e0e0e0;
+animation:fadeUpText 0.8s ease-out 0.4s backwards;
+}
+
+/* Button */
+
+.hero-btn{
+background:linear-gradient(135deg, #2e7d32, #1b5e20);
+color:white;
+border:none;
+padding:14px 32px;
+font-size:17px;
+border-radius:30px;
+cursor:pointer;
+transition:all 0.3s ease;
+box-shadow:0 6px 15px rgba(46,125,50,0.4);
+animation:fadeUpText 0.8s ease-out 0.6s backwards;
+font-weight:600;
+}
+
+.hero-btn:hover{
+background:linear-gradient(135deg, #1b5e20, #0d3b1a);
+transform:translateY(-3px);
+box-shadow:0 10px 25px rgba(46,125,50,0.6);
+}
+
+/* Dots Navigation */
+
+.dots{
+position:absolute;
+bottom:30px;
+left:50%;
+transform:translateX(-50%);
+display:flex;
+gap:10px;
+z-index:3;
+animation:fadeUp 1s ease-out 0.8s backwards;
+}
+
+.dot{
+width:12px;
+height:12px;
+background:#bbb;
+border-radius:50%;
+cursor:pointer;
+transition:all 0.3s ease;
+}
+
+.dot:hover{
+background:#2e7d32;
+transform:scale(1.2);
+}
+
+.dot.active{
+background:#2e7d32;
+width:26px;
+border-radius:10px;
+box-shadow:0 2px 8px rgba(46,125,50,0.6);
+}
+
+/* Animations */
+
+@keyframes slideInLeft{
+from{
+opacity:0;
+transform:translateX(-50px) translateY(-50%);
+}
+to{
+opacity:1;
+transform:translateX(0) translateY(-50%);
+}
+}
+
+@keyframes fadeUpText{
+from{
+opacity:0;
+transform:translateY(20px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+@keyframes fadeUp{
+from{
+opacity:0;
+transform:translateY(20px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+/* Responsive */
+
+@media(max-width:768px){
+
+.hero-content{
+left:5%;
+right:5%;
+}
+
+.hero-content h1{
+font-size:34px;
+}
+
+.hero-content p{
+font-size:16px;
+}
+
+.hero-btn{
+padding:12px 24px;
+}
+
+}
