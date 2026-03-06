@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar/Navbar";
 import Footer from "./components/Footer/Footer";
 import './App.css';
 import Home from './pages/Home';
+import About from './pages/About';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <p>Your partner in sustainable farming</p>
       </main> */}
       <Home />
+      <About />
       <Footer />
     </div>
   );
