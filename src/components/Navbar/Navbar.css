@@ -128,3 +128,8 @@
     display: none;
   }
 }
+.nav-links li a,
+.nav-links li a:visited {
+  text-decoration: none;
+  color: white;
+}

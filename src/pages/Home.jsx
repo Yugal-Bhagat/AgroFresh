@@ -5,6 +5,7 @@ import farm1 from "../images/farm1.jpg";
 import farm2 from "../images/farm2.jpg";
 import farm3 from "../images/farm3.jpg";
 import farm4 from "../images/farm4.jpg";
+import About from "../components/about/About";
 
 const slides = [
   {
@@ -41,6 +42,7 @@ const Home = () => {
   }, []);
 
   return (
+    <>
     <section className="hero">
 
       {slides.map((slide, index) => (
@@ -73,6 +75,10 @@ const Home = () => {
       </div>
 
     </section>
+     <section id="about">
+        <About />
+      </section>
+      </>
   );
 };
 
