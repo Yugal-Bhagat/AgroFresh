@@ -1,18 +1,18 @@
 .navbar {
   width: 100%;
   background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
-  padding: 15px 0;
+  padding: 1rem 0;
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
 }
 
 .navbar-container {
   width: 90%;
-  margin: auto;
+  max-width: 1200px;
+  margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -21,67 +21,64 @@
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   color: white;
   cursor: pointer;
-  transition: all 0.3s ease;
+  text-decoration: none;
+  transition: transform 0.3s ease;
 }
 
 .nav-logo:hover {
   transform: scale(1.05);
-  filter: drop-shadow(0 0 8px rgba(200, 230, 201, 0.6));
 }
 
 .nav-logo h2 {
-  font-size: 22px;
-  font-weight: bold;
+  font-size: 1.5rem;
+  font-weight: 700;
   letter-spacing: 0.5px;
+  margin: 0;
 }
 
 .logo-icon {
-  font-size: 24px;
+  font-size: 1.5rem;
   animation: bounce 2s infinite;
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(0) rotateZ(0deg); }
-  50% { transform: translateY(-5px) rotateZ(5deg); }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(5deg); }
 }
 
 .nav-links {
   list-style: none;
   display: flex;
-  gap: 25px;
-}
-
-.nav-links li {
-  list-style: none;
+  gap: 2rem;
+  margin: 0;
+  padding: 0;
 }
 
 .nav-links li a {
   text-decoration: none;
   color: white;
-  font-size: 16px;
-  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  font-weight: 500;
   position: relative;
-  padding-bottom: 5px;
+  transition: color 0.3s ease;
 }
 
 .nav-links li a::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  bottom: -4px;
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #c8e6c9, #81c784);
+  background: #c8e6c9;
   transition: width 0.3s ease;
-  box-shadow: 0 0 10px rgba(200, 230, 201, 0.8);
 }
 
 .nav-links li a:hover {
   color: #c8e6c9;
-  text-shadow: 0 0 10px rgba(200, 230, 201, 0.5);
 }
 
 .nav-links li a:hover::after {
@@ -90,46 +87,28 @@
 
 .login-btn a {
   text-decoration: none;
-  background: linear-gradient(135deg, white, #f0f0f0);
+  background: white;
   color: #2e7d32;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 0.625rem 1.25rem;
+  border-radius: 6px;
   font-weight: 600;
+  font-size: 0.9rem;
   transition: all 0.3s ease;
   display: inline-block;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  position: relative;
-  overflow: hidden;
-}
-
-.login-btn a::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: rgba(200, 230, 201, 0.3);
-  transition: left 0.3s ease;
-  z-index: -1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .login-btn a:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(46, 125, 50, 0.3);
-}
-
-.login-btn a:hover::before {
-  left: 0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.25);
 }
 
 @media (max-width: 768px) {
   .nav-links {
     display: none;
   }
-}
-.nav-links li a,
-.nav-links li a:visited {
-  text-decoration: none;
-  color: white;
+  
+  .nav-logo h2 {
+    font-size: 1.25rem;
+  }
 }

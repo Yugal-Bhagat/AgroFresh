@@ -1,5 +1,6 @@
 import React from "react";
 import "./Footer.css";
+import { Link } from "react-router-dom";
 
 function Footer() {
   return (
@@ -19,23 +20,22 @@ function Footer() {
         <div className="footer-section">
           <h3>Quick Links</h3>
           <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/">About</a></li>
-            <li><a href="/">Services</a></li>
-            <li><a href="/">Marketplace</a></li>
-            <li><a href="/">Feedback</a></li>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/#about">About</Link></li>
+            <li><Link to="/services">Services</Link></li>
+            <li><Link to="/marketplace">Marketplace</Link></li>
+            <li><Link to="/feedback">Feedback</Link></li>
           </ul>
         </div>
 
-        {/* Farmer Services */}
+        {/* Information Links */}
         <div className="footer-section">
-          <h3>Farmer Services</h3>
+          <h3>Information</h3>
           <ul>
-            <li><a href="/">Government Schemes</a></li>
-            <li><a href="/">Farming Tips</a></li>
-            <li><a href="/">Buy Seeds</a></li>
-            <li><a href="/">Fertilizers</a></li>
-            <li><a href="/">Farm Equipment</a></li>
+            <li><Link to="/schemes">Government Schemes</Link></li>
+            <li><Link to="/tips">Farming Tips</Link></li>
+            <li><Link to="/privacy">Privacy Policy</Link></li>
+            <li><Link to="/terms">Terms & Conditions</Link></li>
           </ul>
         </div>
 
@@ -47,10 +47,18 @@ function Footer() {
           <p>India</p>
 
           <div className="social-icons">
-            <i className="fab fa-facebook"></i>
-            <i className="fab fa-instagram"></i>
-            <i className="fab fa-twitter"></i>
-            <i className="fab fa-linkedin"></i>
+            <a href="https://www.facebook.com/agrofresh" target="_blank" rel="noopener noreferrer">
+              <i className="fab fa-facebook"></i>
+            </a>
+            <a href="https://www.instagram.com/agrofresh" target="_blank" rel="noopener noreferrer">
+              <i className="fab fa-instagram"></i>
+            </a>
+            <a href="https://twitter.com/agrofresh" target="_blank" rel="noopener noreferrer">
+              <i className="fab fa-twitter"></i>
+            </a>
+            <a href="https://www.linkedin.com/company/agrofresh" target="_blank" rel="noopener noreferrer">
+              <i className="fab fa-linkedin"></i>
+            </a>
           </div>
         </div>
 

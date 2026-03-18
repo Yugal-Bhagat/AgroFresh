@@ -26,6 +26,7 @@ const Navbar = () => {
           <li><Link to="/contact">Contact Us</Link></li>
         </ul>
 
+        {/* <div className="login-btn" style={{ width: "80px" }}> */}
         <div className="login-btn">
           <Link to="/login">Login</Link>
         </div>
