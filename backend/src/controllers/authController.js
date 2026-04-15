@@ -5,19 +5,7 @@ import jwt from "jsonwebtoken";
 // Register
 export const registerUser = async (req, res) => {
   try {
-    const { fullName, email, mobile, address, password, userType } = req.body;
-
-    if (!fullName || !email || !mobile || !address || !password) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    if (password !== confirmPassword) {
-      return res.status(400).json({ message: "Passwords do not match" });
-    }
-
-    if (!userType) {
-      return res.status(400).json({ message: "Please select user type" });
-    }
+    const { fullName, email, mobile, address, password, confirmPassword , userType } = req.body;
 
     // Check if user exists
     const emailUsed = await User.findOne({ email });
@@ -64,7 +52,9 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: err.message || "Server error",
+    });
   }
 };
 
@@ -101,6 +91,8 @@ export const loginUser = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({
+      message: err.message || "Server error",
+    });
   }
 };
