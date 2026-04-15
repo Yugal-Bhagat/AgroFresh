@@ -20,6 +20,7 @@ const handleSubmit = async (e) => {
   console.log("Sending Data:", data); // ✅ DEBUG
 
   try {
+    console.log("Submitting form...");
     const res = await fetch("http://localhost:5000/api/auth/register", {
       method: "POST",
       headers: {
@@ -41,7 +42,7 @@ const handleSubmit = async (e) => {
   }
 };
 
-const Register = () => {
+const Register = () => {  
   return (
     <div className="register-page">
       <div className="register-wrapper">
@@ -99,7 +100,7 @@ const Register = () => {
 
               <div className="radio-group">
                 <label className="radio-option">
-                  <input type="radio" name="userType" value="farmer" required />
+                  <input type="radio" name="userType" value="farmer"  />
                   <span className="radio-custom"></span>
                   Farmer
                 </label>
