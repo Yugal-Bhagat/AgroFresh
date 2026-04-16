@@ -12,7 +12,7 @@ import Schemes from "./pages/Scheme";
 import FarmingTips from "./pages/FarmingTips";
 import Marketplace from "./pages/MarketPlace";
 import Product from "./pages/Product";
-import PrivacyPolicy from "./components/Term/PrivacyPolicy";
+import PrivacyPolicy from "./components/Term/Privacy";
 import TermsConditions from "./components/Term/TermsConditions";
 
 function App() {

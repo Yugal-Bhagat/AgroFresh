@@ -25,6 +25,7 @@ const Login = () => {
         localStorage.setItem("token", data.token);
         // Optionally store user info
         localStorage.setItem("userType", data.user.userType);
+        // window.location.href = "/";
         // Redirect based on userType
         if (data.user.userType === "admin") navigate("/admin-dashboard");
         else if (data.user.userType === "farmer") navigate("/farmer-dashboard");
@@ -39,6 +40,7 @@ const Login = () => {
   };
 
   return (
+    
     <div className="login-page">
       <div className="login-wrapper">
         {/* Left Section */}
