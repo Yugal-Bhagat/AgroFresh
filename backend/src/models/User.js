@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     email: {
       type: String,
       required: true,
@@ -14,34 +15,73 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+
     mobile: {
       type: String,
       required: true,
       unique: true,
       trim: true,
     },
+
+    password: {
+      type: String,
+      required: true,
+    },
+
     address: {
       type: String,
       required: true,
       trim: true,
     },
-    password: {
-      type: String,
-      required: true,
+
+    location: {
+      city: String,
+      state: String,
+      pincode: String,
     },
+
     userType: {
       type: String,
       enum: ["farmer", "customer", "admin"],
-      required: true,
       default: "customer",
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
+
+    profileImage: {
+      type: String,
+    },
+
+    verification: {
+      status: {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending",
+      },
+      document: String,
+      verifiedAt: Date,
+    },
+
+    farmerDetails: {
+      farmName: String,
+      farmLocation: String,
+    },
+
+    rating: {
+      type: Number,
+      default: 0,
+    },
+
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
+
+    bankDetails: {
+      accountNumber: String,
+      ifscCode: String,
+      accountHolderName: String,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-const User = mongoose.model("User", userSchema);
-export default User;
+export default mongoose.model("User", userSchema);
