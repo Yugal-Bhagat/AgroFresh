@@ -16,7 +16,11 @@ const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // 🔥 IMPORTANT FIX
-    const user = await User.findById(decoded.id).select("-password");
+    const user = await User.findById(decoded.userId).select("-password");
+
+    console.log("Decoded JWT:", decoded);
+    console.log("User found:", user);
+    console.log("Request user:", req.body);
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
@@ -26,6 +30,7 @@ const protect = async (req, res, next) => {
 
     next();
   } catch (err) {
+    console.error("Token verification error:", err);
     res.status(401).json({ message: "Invalid token" });
   }
 };
