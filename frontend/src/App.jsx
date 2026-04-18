@@ -14,6 +14,7 @@ import Marketplace from "./pages/MarketPlace";
 import Product from "./pages/Product";
 import PrivacyPolicy from "./components/Term/Privacy";
 import TermsConditions from "./components/Term/TermsConditions";
+import AddProduct from "./pages/AddProduct";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         <Route path="/product/:id" element={<Product />} /> {/* Add this line for Product Detail page */}
         <Route path="/privacy" element={<PrivacyPolicy />} /> {/* Add this line for Privacy Policy page */}
         <Route path="/terms" element={<TermsConditions />} /> {/* Add this line for Terms & Conditions page */}
+        <Route path="/add-product" element={<AddProduct />} />
       </Routes>
       <Footer />
     </div>
