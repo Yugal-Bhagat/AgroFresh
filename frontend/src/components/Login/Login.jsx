@@ -1,6 +1,5 @@
-
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./Login.css";
 
 const Login = () => {
@@ -9,38 +8,63 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Basic validation
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      return;
+    }
+
     setError("");
     setLoading(true);
+
     try {
       const res = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+
       const data = await res.json();
+
       if (res.ok) {
+        // Store token and user data
         localStorage.setItem("token", data.token);
-        // Optionally store user info
         localStorage.setItem("userType", data.user.userType);
-        // window.location.href = "/";
+        localStorage.setItem("userName", data.user.fullName);
+        localStorage.setItem("userId", data.user._id);
+
         // Redirect based on userType
-        if (data.user.userType === "admin") navigate("/admin-dashboard");
-        else if (data.user.userType === "farmer") navigate("/farmer-dashboard");
-        else navigate("/user-dashboard");
+        if (data.user.userType === "farmer") {
+          navigate("/farmer-dashboard");
+        } else {
+          // For customer, redirect to the page they came from or marketplace
+          const from = location.state?.from?.pathname || "/marketplace";
+          navigate(from);
+        }
       } else {
-        setError(data.message || "Login failed");
+        // Handle specific error messages
+        if (data.message === "Invalid email or password") {
+          setError("Invalid email or password. Please try again.");
+        } else if (data.message === "User not found") {
+          setError("No account found with this email. Please register first.");
+        } else {
+          setError(data.message || "Login failed. Please try again.");
+        }
       }
     } catch (err) {
-      setError("Server error. Please try again.");
+      console.error("Login error:", err);
+      setError("Unable to connect to server. Please check your internet connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    
     <div className="login-page">
       <div className="login-wrapper">
         {/* Left Section */}
@@ -65,6 +89,7 @@ const Login = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
               />
               <label htmlFor="email">Email Address</label>
             </div>
@@ -77,13 +102,18 @@ const Login = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
               />
               <label htmlFor="password">Password</label>
             </div>
 
             {error && <div className="error-message">{error}</div>}
 
-            <button type="submit" className="login-btn" disabled={loading}>
+            <button
+              type="submit"
+              className="login-btn"
+              disabled={loading}
+            >
               {loading ? "Logging in..." : "Login"}
             </button>
           </form>

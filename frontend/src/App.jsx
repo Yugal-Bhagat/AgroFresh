@@ -15,6 +15,8 @@ import Product from "./pages/Product";
 import PrivacyPolicy from "./components/Term/Privacy";
 import TermsConditions from "./components/Term/TermsConditions";
 import AddProduct from "./pages/AddProduct";
+import FarmerDashboard from "./pages/FarmerDashboard";
+import CustomerDashboard from "./pages/CustomerDashboard";
 
 function App() {
   return (
@@ -34,6 +36,8 @@ function App() {
         <Route path="/privacy" element={<PrivacyPolicy />} /> {/* Add this line for Privacy Policy page */}
         <Route path="/terms" element={<TermsConditions />} /> {/* Add this line for Terms & Conditions page */}
         <Route path="/add-product" element={<AddProduct />} />
+        <Route path="/farmer-dashboard" element={<FarmerDashboard />} />
+        <Route path="/customer-dashboard" element={<CustomerDashboard />} />
       </Routes>
       <Footer />
     </div>

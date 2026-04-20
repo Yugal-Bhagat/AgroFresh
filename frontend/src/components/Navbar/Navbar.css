@@ -1,3 +1,4 @@
+/* Navbar Container */
 .navbar {
   width: 100%;
   background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
@@ -11,13 +12,15 @@
 
 .navbar-container {
   width: 90%;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
 }
 
+/* Logo */
 .nav-logo {
   display: flex;
   align-items: center;
@@ -37,18 +40,27 @@
   font-weight: 700;
   letter-spacing: 0.5px;
   margin: 0;
+  color: white;
 }
 
 .logo-icon {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   animation: bounce 2s infinite;
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-4px) rotate(5deg); }
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-4px) rotate(5deg);
+  }
 }
 
+/* Desktop Navigation Links */
 .nav-links {
   list-style: none;
   display: flex;
@@ -60,55 +72,286 @@
 .nav-links li a {
   text-decoration: none;
   color: white;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 500;
   position: relative;
   transition: color 0.3s ease;
+  padding-bottom: 4px;
 }
 
 .nav-links li a::after {
   content: '';
   position: absolute;
-  bottom: -4px;
+  bottom: -2px;
   left: 0;
   width: 0;
   height: 2px;
-  background: #c8e6c9;
+  background: #ffb300;
   transition: width 0.3s ease;
 }
 
 .nav-links li a:hover {
-  color: #c8e6c9;
+  color: #ffb300;
 }
 
 .nav-links li a:hover::after {
   width: 100%;
 }
 
-.login-btn a {
-  text-decoration: none;
-  background: white;
+/* Login & Profile Buttons */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.login-btn {
+  background: #2e7d32;
   color: #2e7d32;
-  padding: 0.625rem 1.25rem;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  border: none;
+  padding: 0.625rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
   transition: all 0.3s ease;
-  display: inline-block;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.login-btn a:hover {
+.login-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.25);
+  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.3);
+  background: #f5f5f5;
 }
 
+.profile-menu {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.profile-btn {
+  background: #ffb300;
+  color: #1b5e20;
+  border: none;
+  padding: 0.625rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.profile-btn:hover {
+  transform: translateY(-2px);
+  background: #ffa000;
+  box-shadow: 0 6px 20px rgba(255, 160, 0, 0.4);
+}
+
+.logout-btn-mobile {
+  display: none;
+}
+
+/* Mobile Menu Icon */
+.mobile-menu-icon {
+  display: none;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+  line-height: 1;
+  padding: 0.5rem;
+}
+
+.mobile-menu-icon:hover {
+  transform: scale(1.1);
+}
+
+/* Mobile Dropdown Menu */
+.mobile-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #1b5e20;
+  backdrop-filter: blur(10px);
+  padding: 1rem 0;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mobile-menu li {
+  width: 100%;
+  text-align: center;
+}
+
+.mobile-menu li a,
+.mobile-menu li button {
+  text-decoration: none;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 500;
+  display: block;
+  padding: 0.75rem;
+  transition: all 0.3s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.mobile-menu li a:hover,
+.mobile-menu li button:hover {
+  background: rgba(255, 179, 0, 0.2);
+  color: #ffb300;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
+  .navbar-container {
+    width: 95%;
+  }
+
   .nav-links {
     display: none;
   }
-  
+
+  .mobile-menu-icon {
+    display: block;
+  }
+
+  .nav-actions {
+    display: none;
+  }
+
+  .logout-btn-mobile {
+    display: inline-block;
+    background: #c62828;
+    color: white;
+    border: none;
+    padding: 0.625rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}
+
+/* Tablet Responsive */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .nav-links {
+    gap: 1.2rem;
+  }
+
+  .nav-links li a {
+    font-size: 0.9rem;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
   .nav-logo h2 {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
+  }
+
+  .logo-icon {
+    font-size: 1.5rem;
+  }
+
+  .mobile-menu li a,
+  .mobile-menu li button {
+    font-size: 1rem;
+    padding: 0.6rem;
+  }
+}
+
+/* Profile Menu Styles */
+.profile-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.profile-btn {
+  background: #ffb300;
+  color: #1b5e20;
+  border: none;
+  padding: 0.625rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-btn:hover {
+  transform: translateY(-2px);
+  background: #ffa000;
+  box-shadow: 0 6px 20px rgba(255, 160, 0, 0.4);
+}
+
+.profile-icon {
+  font-size: 1.1rem;
+}
+
+.profile-text {
+  font-size: 0.95rem;
+}
+
+.logout-btn-desktop {
+  background: #c62828;
+  color: white;
+  border: none;
+  padding: 0.625rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.logout-btn-desktop:hover {
+  transform: translateY(-2px);
+  background: #b71c1c;
+  box-shadow: 0 6px 20px rgba(198, 40, 40, 0.4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .profile-menu {
+    display: none;
+  }
+
+  .logout-btn-desktop {
+    display: none;
   }
 }

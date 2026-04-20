@@ -46,8 +46,8 @@ const handleSubmit = async (e) => {
     const result = await res.json();
 
     if (res.ok) {
-      localStorage.setItem("token", result.token);
-      window.location.href = "/";
+      alert("Registration successful! Please login to continue.");
+      window.location.href = "/login";
     } else {
       alert(result.errors ? result.errors.join("\n") : result.message);
     }
@@ -56,7 +56,7 @@ const handleSubmit = async (e) => {
   }
 };
 
-const Register = () => {  
+const Register = () => {
   return (
     <div className="register-page">
       <div className="register-wrapper">
@@ -75,7 +75,7 @@ const Register = () => {
           <p>Register to start using AgroFresh</p>
 
           <form onSubmit={handleSubmit}>
-            
+
             <div className="form-group">
               <input type="text" id="fullName" name="fullName" placeholder=" " required />
               <label htmlFor="fullName">Full Name</label>
@@ -114,7 +114,7 @@ const Register = () => {
 
               <div className="radio-group">
                 <label className="radio-option">
-                  <input type="radio" name="userType" value="farmer"  />
+                  <input type="radio" name="userType" value="farmer" />
                   <span className="radio-custom"></span>
                   Farmer
                 </label>
