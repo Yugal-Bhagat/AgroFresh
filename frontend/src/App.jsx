@@ -17,6 +17,11 @@ import TermsConditions from "./components/Term/TermsConditions";
 import AddProduct from "./pages/AddProduct";
 import FarmerDashboard from "./pages/FarmerDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import OrderSuccess from "./pages/OrderSuccess";
+import MyOrders from "./pages/MyOrders";
 
 function App() {
   return (
@@ -38,6 +43,11 @@ function App() {
         <Route path="/add-product" element={<AddProduct />} />
         <Route path="/farmer-dashboard" element={<FarmerDashboard />} />
         <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-success" element={<OrderSuccess />} />
+        <Route path="/my-orders" element={<MyOrders />} />
       </Routes>
       <Footer />
     </div>

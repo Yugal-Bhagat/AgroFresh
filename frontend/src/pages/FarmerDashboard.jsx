@@ -1,52 +1,245 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './FarmerDashboard.css';
 
 const FarmerDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
+    const [showVerificationModal, setShowVerificationModal] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [error, setError] = useState('');
+    const [verificationForm, setVerificationForm] = useState({
+        farmName: '',
+        farmLocation: '',
+        farmSize: '',
+        cropTypes: [],
+        bankDetails: {
+            accountHolderName: '',
+            accountNumber: '',
+            ifscCode: ''
+        }
+    });
     const [isEditing, setIsEditing] = useState(false);
     const [showAddProduct, setShowAddProduct] = useState(false);
     const navigate = useNavigate();
 
-    // Dummy farmer data
-    const [farmer, setFarmer] = useState({
-        name: 'Ramesh Kumar',
-        farmName: 'Green Valley Farms',
-        email: 'ramesh.kumar@agrofresh.com',
-        phone: '+91 98765 43210',
-        address: '123 Farm Road, Agricultural Zone, Delhi - 110001',
-        joinDate: 'January 15, 2026',
-        avatar: '👨‍🌾',
-        totalProducts: 12,
-        totalOrders: 48,
-        totalEarnings: 45280,
-        rating: 4.8
+    // State for dynamic data
+    const [dashboardData, setDashboardData] = useState({
+        totalProducts: 0,
+        totalOrders: 0,
+        totalEarnings: 0,
+        averageRating: 0,
+        totalCustomers: 0,
+        recentOrders: [],
+        topProducts: []
     });
 
-    // Dummy products data
-    const [products, setProducts] = useState([
-        { id: 1, name: 'Fresh Tomatoes', price: 40, unit: 'kg', stock: 50, category: 'vegetables', image: '🍅', status: 'active', sold: 120 },
-        { id: 2, name: 'Organic Apples', price: 120, unit: 'kg', stock: 30, category: 'fruits', image: '🍎', status: 'active', sold: 80 },
-        { id: 3, name: 'Basmati Rice', price: 80, unit: 'kg', stock: 200, category: 'grains', image: '🌾', status: 'active', sold: 350 },
-        { id: 4, name: 'Cow Milk', price: 50, unit: 'litre', stock: 100, category: 'dairy', image: '🥛', status: 'active', sold: 250 },
-        { id: 5, name: 'Potatoes', price: 30, unit: 'kg', stock: 150, category: 'vegetables', image: '🥔', status: 'inactive', sold: 180 },
-    ]);
+    const [farmerProfile, setFarmerProfile] = useState({
+        name: '',
+        farmName: '',
+        email: '',
+        phone: '',
+        address: '',
+        joinDate: '',
+        avatar: '👨‍🌾',
+        rating: 0
+    });
 
-    // Dummy orders received
-    const orders = [
-        { id: '#ORD001', customer: 'Rahul Sharma', date: 'Mar 15, 2026', items: 3, total: 450, status: 'delivered', payment: 'paid' },
-        { id: '#ORD002', customer: 'Priya Mehta', date: 'Mar 14, 2026', items: 2, total: 240, status: 'shipped', payment: 'paid' },
-        { id: '#ORD003', customer: 'Amit Singh', date: 'Mar 13, 2026', items: 5, total: 890, status: 'processing', payment: 'pending' },
-        { id: '#ORD004', customer: 'Sunita Devi', date: 'Mar 12, 2026', items: 1, total: 120, status: 'delivered', payment: 'paid' },
-        { id: '#ORD005', customer: 'Vikram Patel', date: 'Mar 11, 2026', items: 4, total: 680, status: 'cancelled', payment: 'refunded' }
-    ];
+    const [products, setProducts] = useState([]);
+    const [orders, setOrders] = useState([]);
+    const [earnings, setEarnings] = useState({
+        totalEarnings: 0,
+        monthlyData: [],
+        topEarningProducts: []
+    });
 
-    // Monthly earnings data
-    const monthlyEarnings = [
-        { month: 'Jan', earnings: 12500 },
-        { month: 'Feb', earnings: 15200 },
-        { month: 'Mar', earnings: 17580 }
-    ];
+    const [ratings, setRatings] = useState({
+        averageRating: 0,
+        totalReviews: 0,
+        ratingBreakdown: {},
+        recentReviews: []
+    });
+
+    const [verificationStatus, setVerificationStatus] = useState({
+        status: 'not_applied',
+        isSellingEnabled: false,
+        message: '',
+        appliedAt: null,
+        approvedAt: null
+    });
+
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchDashboardData();
+        fetchFarmerProfile();
+        fetchVerificationStatus();
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === 'products') fetchProducts();
+        if (activeTab === 'orders') fetchOrders();
+        if (activeTab === 'earnings') fetchEarnings();
+        if (activeTab === 'profile') fetchRatings();
+    }, [activeTab]);
+
+    const fetchDashboardData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/farmer/dashboard', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setDashboardData(data);
+            }
+        } catch (err) {
+            console.error('Dashboard fetch error:', err);
+        }
+    };
+
+    const fetchFarmerProfile = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/auth/profile', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                const user = await res.json();
+                setFarmerProfile({
+                    name: user.fullName,
+                    farmName: user.farmerDetails?.farmName || '',
+                    email: user.email,
+                    phone: user.mobile,
+                    address: user.address,
+                    joinDate: new Date(user.createdAt).toLocaleDateString(),
+                    avatar: '👨‍🌾',
+                    rating: user.averageRating || 0
+                });
+            }
+        } catch (err) {
+            console.error('Profile fetch error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchProducts = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/farmer/products', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setProducts(data);
+            }
+        } catch (err) {
+            console.error('Products fetch error:', err);
+        }
+    };
+
+    const fetchOrders = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/farmer/orders', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setOrders(data);
+            }
+        } catch (err) {
+            console.error('Orders fetch error:', err);
+        }
+    };
+
+    const fetchEarnings = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/farmer/earnings', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setEarnings(data);
+            }
+        } catch (err) {
+            console.error('Earnings fetch error:', err);
+        }
+    };
+
+    const fetchRatings = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/farmer/ratings', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setRatings(data);
+            }
+        } catch (err) {
+            console.error('Ratings fetch error:', err);
+        }
+    };
+
+    const fetchVerificationStatus = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/farmer/verification-status', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setVerificationStatus(data);
+            }
+        } catch (err) {
+            console.error('Verification status fetch error:', err);
+        }
+    };
+
+    const handleVerificationSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/farmer/apply-verification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(verificationForm)
+            });
+
+            if (res.ok) {
+                setSuccessMessage('Verification application submitted successfully!');
+                setShowVerificationModal(false);
+                fetchVerificationStatus();
+                setTimeout(() => setSuccessMessage(''), 3000);
+            } else {
+                setError('Failed to submit application');
+            }
+        } catch (err) {
+            console.error('Verification submit error:', err);
+            setError('Failed to submit application');
+        }
+    };
+
+    const handleCropTypeChange = (cropType) => {
+        setVerificationForm(prev => ({
+            ...prev,
+            cropTypes: prev.cropTypes.includes(cropType)
+                ? prev.cropTypes.filter(type => type !== cropType)
+                : [...prev.cropTypes, cropType]
+        }));
+    };
 
     const getStatusBadge = (status) => {
         const badges = {
@@ -87,12 +280,12 @@ const FarmerDashboard = () => {
                 {/* Sidebar */}
                 <aside className="dashboard-sidebar">
                     <div className="sidebar-header">
-                        <div className="avatar">{farmer.avatar}</div>
-                        <h3>{farmer.name}</h3>
-                        <p>{farmer.farmName}</p>
+                        <div className="avatar">{farmerProfile.avatar}</div>
+                        <h3>{farmerProfile.name}</h3>
+                        <p>{farmerProfile.farmName}</p>
                         <div className="farmer-rating">
-                            <span>⭐ {farmer.rating}</span>
-                            <span>Verified Farmer ✓</span>
+                            <span>⭐ {farmerProfile.rating}</span>
+                            <span>{verificationStatus.isSellingEnabled ? 'Seller Verified ✓' : 'Not Verified'}</span>
                         </div>
                     </div>
 
@@ -133,11 +326,11 @@ const FarmerDashboard = () => {
                             <span>Farm Profile</span>
                         </button>
                         <button
-                            className={`nav-item ${activeTab === 'schemes' ? 'active' : ''}`}
-                            onClick={() => navigate('/schemes')}
+                            className={`nav-item ${activeTab === 'verification' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('verification')}
                         >
-                            <span className="nav-icon">🏦</span>
-                            <span>Govt. Schemes</span>
+                            <span className="nav-icon">✅</span>
+                            <span>Seller Verification</span>
                         </button>
                     </nav>
 
@@ -160,7 +353,7 @@ const FarmerDashboard = () => {
                         <div className="tab-content fade-in">
                             <div className="welcome-banner">
                                 <div className="welcome-text">
-                                    <h2>Welcome back, {farmer.name.split(' ')[0]}! 🌾</h2>
+                                    <h2>Welcome back, {farmerProfile.name.split(' ')[0]}! 🌾</h2>
                                     <p>Here's what's happening with your farm today</p>
                                 </div>
                             </div>
@@ -170,28 +363,28 @@ const FarmerDashboard = () => {
                                 <div className="stat-card">
                                     <div className="stat-icon">🌾</div>
                                     <div className="stat-info">
-                                        <span className="stat-value">{farmer.totalProducts}</span>
+                                        <span className="stat-value">{dashboardData.totalProducts}</span>
                                         <span className="stat-label">Total Products</span>
                                     </div>
                                 </div>
                                 <div className="stat-card">
                                     <div className="stat-icon">📦</div>
                                     <div className="stat-info">
-                                        <span className="stat-value">{farmer.totalOrders}</span>
+                                        <span className="stat-value">{dashboardData.totalOrders}</span>
                                         <span className="stat-label">Total Orders</span>
                                     </div>
                                 </div>
                                 <div className="stat-card">
                                     <div className="stat-icon">💰</div>
                                     <div className="stat-info">
-                                        <span className="stat-value">₹{farmer.totalEarnings.toLocaleString()}</span>
+                                        <span className="stat-value">₹{dashboardData.totalEarnings.toLocaleString()}</span>
                                         <span className="stat-label">Total Earnings</span>
                                     </div>
                                 </div>
                                 <div className="stat-card">
                                     <div className="stat-icon">⭐</div>
                                     <div className="stat-info">
-                                        <span className="stat-value">{farmer.rating}</span>
+                                        <span className="stat-value">{dashboardData.averageRating}</span>
                                         <span className="stat-label">Rating</span>
                                     </div>
                                 </div>
@@ -209,15 +402,15 @@ const FarmerDashboard = () => {
                                             <tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th></tr>
                                         </thead>
                                         <tbody>
-                                            {orders.slice(0, 3).map(order => (
-                                                <tr key={order.id}>
-                                                    <td>{order.id}</td>
-                                                    <td>{order.customer}</td>
-                                                    <td>{order.date}</td>
-                                                    <td>{order.items}</td>
-                                                    <td>₹{order.total}</td>
-                                                    <td><span className={`status-badge ${getStatusBadge(order.status)}`}>{order.status}</span></td>
-                                                    <td><span className={`payment-badge ${getPaymentBadge(order.payment)}`}>{order.payment}</span></td>
+                                            {dashboardData.recentOrders.map((order, index) => (
+                                                <tr key={index}>
+                                                    <td>#{order._id.slice(-6)}</td>
+                                                    <td>{order.customer.fullName}</td>
+                                                    <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                                                    <td>{order.totalAmount}</td>
+                                                    <td>₹{order.totalAmount}</td>
+                                                    <td><span className={`status-badge ${getStatusBadge(order.orderStatus)}`}>{order.orderStatus}</span></td>
+                                                    <td><span className={`payment-badge ${getPaymentBadge(order.paymentStatus)}`}>{order.paymentStatus}</span></td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -229,10 +422,10 @@ const FarmerDashboard = () => {
                             <div className="quick-actions">
                                 <h3>Quick Actions</h3>
                                 <div className="action-grid">
-                                    <button className="action-card" onClick={() => setActiveTab('products')}>
+                                    <Link to="/add-product" className="action-card">
                                         <span>➕</span>
                                         <span>Add Product</span>
-                                    </button>
+                                    </Link>
                                     <button className="action-card" onClick={() => setActiveTab('products')}>
                                         <span>📦</span>
                                         <span>Manage Stock</span>
@@ -255,9 +448,9 @@ const FarmerDashboard = () => {
                         <div className="tab-content fade-in">
                             <div className="products-header">
                                 <h2>My Products</h2>
-                                <button className="add-product-btn" onClick={() => setShowAddProduct(true)}>
+                                <Link to="/add-product" className="add-product-btn">
                                     + Add New Product
-                                </button>
+                                </Link>
                             </div>
 
                             {/* Add Product Modal */}
@@ -311,21 +504,24 @@ const FarmerDashboard = () => {
 
                             <div className="products-grid">
                                 {products.map(product => (
-                                    <div className="product-card" key={product.id}>
-                                        <div className="product-image">{product.image}</div>
+                                    <div className="product-card" key={product.productId}>
+                                        <div className="product-image">🌾</div>
                                         <div className="product-details">
                                             <h4>{product.name}</h4>
                                             <p className="product-category">{product.category}</p>
-                                            <p className="product-price">₹{product.price}/{product.unit}</p>
+                                            <p className="product-price">₹{product.price}/{product.quantityUnit}</p>
                                             <div className="product-stats">
                                                 <span>Stock: {product.stock}</span>
-                                                <span>Sold: {product.sold}</span>
+                                                <span>Sold: {product.totalSold}</span>
+                                                <span>Earnings: ₹{product.totalEarnings}</span>
                                             </div>
-                                            <span className={`product-status ${product.status}`}>{product.status}</span>
+                                            <div className="product-rating">
+                                                <span>⭐ {product.rating} ({product.reviews} reviews)</span>
+                                            </div>
                                         </div>
                                         <div className="product-actions">
                                             <button className="edit-btn">Edit</button>
-                                            <button className="delete-btn" onClick={() => handleDeleteProduct(product.id)}>Delete</button>
+                                            <button className="delete-btn" onClick={() => handleDeleteProduct(product.productId)}>Delete</button>
                                         </div>
                                     </div>
                                 ))}
@@ -337,29 +533,134 @@ const FarmerDashboard = () => {
                     {activeTab === 'orders' && (
                         <div className="tab-content fade-in">
                             <h2>Orders Received</h2>
-                            <div className="orders-table-container full">
-                                <table className="orders-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Order ID</th><th>Customer</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th><th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {orders.map(order => (
-                                            <tr key={order.id}>
-                                                <td>{order.id}</td>
-                                                <td>{order.customer}</td>
-                                                <td>{order.date}</td>
-                                                <td>{order.items}</td>
-                                                <td>₹{order.total}</td>
-                                                <td><span className={`status-badge ${getStatusBadge(order.status)}`}>{order.status}</span></td>
-                                                <td><span className={`payment-badge ${getPaymentBadge(order.payment)}`}>{order.payment}</span></td>
-                                                <td><button className="update-status-btn">Update</button></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                            {orders.length === 0 ? (
+                                <p style={{ background: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
+                                    No orders yet.
+                                </p>
+                            ) : (
+                                <div className="order-cards">
+                                    {orders.map(order => (
+                                        <div className="order-card" key={order.orderId}>
+                                            <div className="order-card-header">
+                                                <div>
+                                                    <strong>Order #{order.orderId.slice(-6).toUpperCase()}</strong>
+                                                    <p className="order-date">
+                                                        {new Date(order.orderDate).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                                <span className={`status-badge ${getStatusBadge(order.orderStatus)}`}>
+                                                    {order.orderStatus}
+                                                </span>
+                                            </div>
+
+                                            <div className="order-card-body">
+                                                <div className="order-section">
+                                                    <h4>👤 Customer</h4>
+                                                    <p><strong>{order.customerName}</strong></p>
+                                                    {order.customerPhone && (
+                                                        <p>📞 {order.customerPhone}</p>
+                                                    )}
+                                                    {order.customerEmail && (
+                                                        <p>✉️ {order.customerEmail}</p>
+                                                    )}
+                                                </div>
+
+                                                <div className="order-section">
+                                                    <h4>📦 Shipping Address</h4>
+                                                    <p style={{ whiteSpace: 'pre-wrap' }}>
+                                                        {order.shippingAddress || order.customerAddress || '—'}
+                                                    </p>
+                                                </div>
+
+                                                <div className="order-section">
+                                                    <h4>🛒 Items ({order.totalItems})</h4>
+                                                    <ul className="order-items-list">
+                                                        {order.productDetails.map((p, idx) => (
+                                                            <li key={idx}>
+                                                                {p.image && (
+                                                                    <img src={p.image} alt={p.name} />
+                                                                )}
+                                                                <div>
+                                                                    <strong>{p.name}</strong>
+                                                                    <span>
+                                                                        {p.quantity} {p.unit} × ₹{p.price} = ₹{(p.quantity * p.price).toFixed(2)}
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+
+                                                <div className="order-section">
+                                                    <h4>💳 Payment</h4>
+                                                    <p>
+                                                        <strong>Method:</strong>{' '}
+                                                        {order.paymentMethod === 'cod' ? '💵 Cash on Delivery' : '💳 Online'}
+                                                    </p>
+                                                    <p>
+                                                        <strong>Status:</strong>{' '}
+                                                        <span className={`payment-badge ${getPaymentBadge(order.paymentStatus)}`}>
+                                                            {order.paymentStatus}
+                                                        </span>
+                                                    </p>
+                                                    <p><strong>Total:</strong> ₹{order.totalAmount.toFixed(2)}</p>
+                                                </div>
+
+                                                {order.notes && (
+                                                    <div className="order-section">
+                                                        <h4>📝 Notes</h4>
+                                                        <p>{order.notes}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="order-card-footer">
+                                                {order.customerPhone && (
+                                                    <a
+                                                        href={`tel:${order.customerPhone}`}
+                                                        className="contact-btn"
+                                                    >
+                                                        📞 Contact Customer
+                                                    </a>
+                                                )}
+                                                <select
+                                                    className="order-status-select"
+                                                    value={order.orderStatus}
+                                                    onChange={async (e) => {
+                                                        try {
+                                                            const token = localStorage.getItem('token');
+                                                            const res = await fetch(
+                                                                `http://localhost:5000/api/orders/${order.orderId}/status`,
+                                                                {
+                                                                    method: 'PUT',
+                                                                    headers: {
+                                                                        'Content-Type': 'application/json',
+                                                                        Authorization: `Bearer ${token}`,
+                                                                    },
+                                                                    body: JSON.stringify({ status: e.target.value }),
+                                                                },
+                                                            );
+                                                            if (!res.ok) {
+                                                                const d = await res.json();
+                                                                throw new Error(d.message || 'Failed');
+                                                            }
+                                                            fetchOrders();
+                                                        } catch (err) {
+                                                            alert(err.message);
+                                                        }
+                                                    }}
+                                                >
+                                                    <option value="pending">Pending</option>
+                                                    <option value="processing">Processing</option>
+                                                    <option value="shipped">Shipped</option>
+                                                    <option value="delivered">Delivered</option>
+                                                    <option value="cancelled">Cancelled</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -370,27 +671,39 @@ const FarmerDashboard = () => {
                             <div className="earnings-summary">
                                 <div className="earnings-card">
                                     <h3>Total Earnings</h3>
-                                    <p className="total-earnings">₹{farmer.totalEarnings.toLocaleString()}</p>
+                                    <p className="total-earnings">₹{earnings.totalEarnings.toLocaleString()}</p>
                                 </div>
                                 <div className="earnings-card">
                                     <h3>Pending Payout</h3>
-                                    <p className="pending-earnings">₹{farmer.totalEarnings * 0.15}</p>
+                                    <p className="pending-earnings">₹{(earnings.totalEarnings * 0.15).toLocaleString()}</p>
                                 </div>
                                 <div className="earnings-card">
                                     <h3>Available Balance</h3>
-                                    <p className="available-earnings">₹{farmer.totalEarnings * 0.85}</p>
+                                    <p className="available-earnings">₹{(earnings.totalEarnings * 0.85).toLocaleString()}</p>
                                 </div>
                             </div>
 
                             <div className="chart-container">
-                                <h3>Monthly Earnings (2026)</h3>
+                                <h3>Monthly Earnings</h3>
                                 <div className="bar-chart">
-                                    {monthlyEarnings.map(item => (
+                                    {earnings.monthlyData.map(item => (
                                         <div className="bar-item" key={item.month}>
-                                            <div className="bar" style={{ height: `${(item.earnings / 20000) * 100}%` }}>
+                                            <div className="bar" style={{ height: `${(item.earnings / Math.max(...earnings.monthlyData.map(d => d.earnings))) * 100}%` }}>
                                                 <span className="bar-value">₹{item.earnings}</span>
                                             </div>
                                             <span className="bar-label">{item.month}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="top-earning-products">
+                                <h3>Top Earning Products</h3>
+                                <div className="products-earnings-list">
+                                    {earnings.topEarningProducts.map((product, index) => (
+                                        <div key={index} className="earnings-product-item">
+                                            <span className="product-name">{product.name}</span>
+                                            <span className="product-earnings">₹{product.earnings}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -412,32 +725,93 @@ const FarmerDashboard = () => {
                             <div className="profile-form">
                                 <div className="form-group">
                                     <label>Farmer Name</label>
-                                    <input type="text" value={farmer.name} disabled={!isEditing} onChange={(e) => setFarmer({ ...farmer, name: e.target.value })} />
+                                    <input type="text" value={farmerProfile.name} disabled={!isEditing} onChange={(e) => setFarmerProfile({ ...farmerProfile, name: e.target.value })} />
                                 </div>
                                 <div className="form-group">
                                     <label>Farm Name</label>
-                                    <input type="text" value={farmer.farmName} disabled={!isEditing} />
+                                    <input type="text" value={farmerProfile.farmName} disabled={!isEditing} />
                                 </div>
                                 <div className="form-group">
                                     <label>Email Address</label>
-                                    <input type="email" value={farmer.email} disabled={!isEditing} />
+                                    <input type="email" value={farmerProfile.email} disabled={!isEditing} />
                                 </div>
                                 <div className="form-group">
                                     <label>Phone Number</label>
-                                    <input type="tel" value={farmer.phone} disabled={!isEditing} />
+                                    <input type="tel" value={farmerProfile.phone} disabled={!isEditing} />
                                 </div>
                                 <div className="form-group">
                                     <label>Farm Address</label>
-                                    <textarea rows="3" value={farmer.address} disabled={!isEditing}></textarea>
+                                    <textarea rows="3" value={farmerProfile.address} disabled={!isEditing}></textarea>
                                 </div>
                                 <div className="form-group">
                                     <label>Member Since</label>
-                                    <input type="text" value={farmer.joinDate} disabled />
+                                    <input type="text" value={farmerProfile.joinDate} disabled />
                                 </div>
                                 {isEditing && (
                                     <button className="save-btn">Save Changes</button>
                                 )}
                             </div>
+                        </div>
+                    )}
+
+                    {/* Verification Tab */}
+                    {activeTab === 'verification' && (
+                        <div className="tab-content fade-in">
+                            <h2>Seller Verification</h2>
+
+                            {verificationStatus.status === 'approved' && (
+                                <div className="verification-status approved">
+                                    <div className="status-icon">✅</div>
+                                    <div className="status-content">
+                                        <h3>Congratulations! You are a Verified Seller</h3>
+                                        <p>You can now sell your products on AgroFresh marketplace.</p>
+                                        <p className="verification-date">Verified on: {new Date(verificationStatus.approvedAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {verificationStatus.status === 'pending' && (
+                                <div className="verification-status pending">
+                                    <div className="status-icon">⏳</div>
+                                    <div className="status-content">
+                                        <h3>Verification Application Pending</h3>
+                                        <p>Your application is being reviewed by our team. We'll notify you once it's processed.</p>
+                                        <p className="application-date">Applied on: {new Date(verificationStatus.appliedAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {verificationStatus.status === 'rejected' && (
+                                <div className="verification-status rejected">
+                                    <div className="status-icon">❌</div>
+                                    <div className="status-content">
+                                        <h3>Verification Application Rejected</h3>
+                                        <p>{verificationStatus.message}</p>
+                                        <button className="apply-btn" onClick={() => setShowVerificationModal(true)}>
+                                            Apply Again
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {(verificationStatus.status === 'not_applied' || verificationStatus.status === 'rejected') && (
+                                <div className="apply-verification-section">
+                                    <div className="apply-card">
+                                        <h3>Become a Verified Seller</h3>
+                                        <p>Get verified to start selling your fresh produce on AgroFresh marketplace.</p>
+                                        <ul className="benefits-list">
+                                            <li>✅ Direct access to thousands of customers</li>
+                                            <li>✅ Higher selling prices</li>
+                                            <li>✅ Secure payment processing</li>
+                                            <li>✅ Marketing support</li>
+                                            <li>✅ Quality assurance badge</li>
+                                        </ul>
+                                        <button className="apply-btn" onClick={() => setShowVerificationModal(true)}>
+                                            Apply for Verification
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -476,6 +850,161 @@ const FarmerDashboard = () => {
 
                 </main>
             </div>
+
+            {/* Verification Modal */}
+            {showVerificationModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h3>Apply for Seller Verification</h3>
+                            <button className="close-btn" onClick={() => setShowVerificationModal(false)}>×</button>
+                        </div>
+
+                        <form onSubmit={handleVerificationSubmit} className="verification-form">
+                            <div className="form-section">
+                                <h4>Farm Information</h4>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Farm Name *</label>
+                                        <input
+                                            type="text"
+                                            value={verificationForm.farmName}
+                                            onChange={(e) => setVerificationForm({ ...verificationForm, farmName: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Farm Location *</label>
+                                        <input
+                                            type="text"
+                                            value={verificationForm.farmLocation}
+                                            onChange={(e) => setVerificationForm({ ...verificationForm, farmLocation: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Farm Size (in acres) *</label>
+                                    <input
+                                        type="number"
+                                        value={verificationForm.farmSize}
+                                        onChange={(e) => setVerificationForm({ ...verificationForm, farmSize: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Crop Types *</label>
+                                    <div className="crop-types">
+                                        {['vegetables', 'fruits', 'grains', 'dairy', 'pulses', 'spices', 'other'].map(crop => (
+                                            <label key={crop} className="crop-checkbox">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={verificationForm.cropTypes.includes(crop)}
+                                                    onChange={() => handleCropTypeChange(crop)}
+                                                />
+                                                {crop.charAt(0).toUpperCase() + crop.slice(1)}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="form-section">
+                                <h4>Bank Details</h4>
+                                <div className="form-group">
+                                    <label>Account Holder Name *</label>
+                                    <input
+                                        type="text"
+                                        value={verificationForm.bankDetails.accountHolderName}
+                                        onChange={(e) => setVerificationForm({
+                                            ...verificationForm,
+                                            bankDetails: { ...verificationForm.bankDetails, accountHolderName: e.target.value }
+                                        })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Account Number *</label>
+                                        <input
+                                            type="text"
+                                            value={verificationForm.bankDetails.accountNumber}
+                                            onChange={(e) => setVerificationForm({
+                                                ...verificationForm,
+                                                bankDetails: { ...verificationForm.bankDetails, accountNumber: e.target.value }
+                                            })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>IFSC Code *</label>
+                                        <input
+                                            type="text"
+                                            value={verificationForm.bankDetails.ifscCode}
+                                            onChange={(e) => setVerificationForm({
+                                                ...verificationForm,
+                                                bankDetails: { ...verificationForm.bankDetails, ifscCode: e.target.value }
+                                            })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="form-section">
+                                <h4>Documents</h4>
+                                <div className="form-group">
+                                    <label>Upload Farm Documents (Optional)</label>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*,.pdf"
+                                        onChange={(e) => {
+                                            // Handle file upload here
+                                            console.log('Files selected:', e.target.files);
+                                        }}
+                                    />
+                                    <small>Upload photos of your farm, land documents, or other relevant certificates</small>
+                                </div>
+                            </div>
+
+                            <div className="form-actions">
+                                <button type="button" className="cancel-btn" onClick={() => setShowVerificationModal(false)}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="submit-btn">
+                                    Submit Application
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Success/Error Messages */}
+            {successMessage && (
+                <div className="message-overlay">
+                    <div className="message-content success">
+                        <span>✅</span>
+                        <p>{successMessage}</p>
+                        <button onClick={() => setSuccessMessage('')}>OK</button>
+                    </div>
+                </div>
+            )}
+
+            {error && (
+                <div className="message-overlay">
+                    <div className="message-content error">
+                        <span>❌</span>
+                        <p>{error}</p>
+                        <button onClick={() => setError('')}>OK</button>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

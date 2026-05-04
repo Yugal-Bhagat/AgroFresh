@@ -355,3 +355,41 @@
     display: none;
   }
 }
+
+.cart-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  text-decoration: none;
+  color: #1b5e20;
+  background: rgba(255, 255, 255, 0.15);
+  margin-right: 8px;
+  transition: background 0.2s ease;
+}
+
+.cart-nav-link:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.cart-nav-icon {
+  font-size: 1.4rem;
+}
+
+.cart-nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #d32f2f;
+  color: white;
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1;
+}

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 import './Product.css';
 
 const Product = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { addItem } = useCart();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -13,67 +16,165 @@ const Product = () => {
 
   const [reviews, setReviews] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [newReview, setNewReview] = useState({ name: '', rating: 5, comment: '' });
+  const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [inWishlist, setInWishlist] = useState(false);
+
+  const token = localStorage.getItem('token');
+  const currentUserName = localStorage.getItem('userName');
+  const userType = localStorage.getItem('userType');
+
+  const checkWishlist = async () => {
+    if (!token || userType !== 'customer') return;
+    try {
+      const res = await fetch('http://localhost:5000/api/wishlist', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const has = (data.products || []).some((p) => p && p._id === id);
+      setInWishlist(has);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const toggleWishlist = async () => {
+    if (!token) {
+      alert('Please login to use wishlist.');
+      navigate('/login');
+      return;
+    }
+    if (userType === 'farmer') {
+      alert("You're logged in as a Farmer. Wishlist is for customers — please login with a Customer account.");
+      return;
+    }
+    try {
+      if (inWishlist) {
+        const res = await fetch(`http://localhost:5000/api/wishlist/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed');
+        setInWishlist(false);
+      } else {
+        const res = await fetch('http://localhost:5000/api/wishlist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ productId: id }),
+        });
+        if (!res.ok) throw new Error('Failed');
+        setInWishlist(true);
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/reviews/product/${id}`);
+      if (!res.ok) throw new Error('Failed to load reviews');
+      const data = await res.json();
+      setReviews(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchProduct = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/products/${id}`);
+      const data = await res.json();
+      setProduct(data);
+
+      const res2 = await fetch(`http://localhost:5000/api/products`);
+      const allProducts = await res2.json();
+      setRelatedProducts(
+        allProducts.filter(
+          (p) => p.category === data.category && p._id !== data._id,
+        ),
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`http://localhost:5000/api/products/${id}`);
-        const data = await res.json();
-
-        setProduct(data);
-        setReviews([]); // until backend reviews
-
-        const res2 = await fetch(`http://localhost:5000/api/products`);
-        const allProducts = await res2.json();
-
-        const filtered = allProducts.filter(
-          (p) => p.category === data.category && p._id !== data._id
-        );
-
-        setRelatedProducts(filtered);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchData();
+    fetchProduct();
+    fetchReviews();
+    checkWishlist();
     window.scrollTo(0, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   if (!product) {
     return <div className="product-not-found">Product not found</div>;
   }
 
-  // ✅ FIXED (no fake data)
-  const images = product.images || [];
+  const productImages = (product.images || []).map((url) => ({ url, type: 'image' }));
+  const productVideos = (product.videos || []).map((url) => ({ url, type: 'video' }));
+  const media = [...productImages, ...productVideos];
+  const activeMedia = media[activeImage];
 
   const handleQuantityChange = (e) => {
     const val = parseInt(e.target.value);
     if (val > 0 && val <= product.stock) setQuantity(val);
   };
 
-  const handleReviewSubmit = (e) => {
+  const handleReviewSubmit = async (e) => {
     e.preventDefault();
+    setReviewError('');
 
-    const review = {
-      id: Date.now(),
-      user: newReview.name,
-      rating: newReview.rating,
-      comment: newReview.comment,
-      date: new Date().toISOString().split('T')[0],
-    };
+    if (!token) {
+      setReviewError('Please login to write a review.');
+      return;
+    }
 
-    setReviews([review, ...reviews]);
-    setNewReview({ name: '', rating: 5, comment: '' });
-    setShowReviewForm(false);
+    try {
+      setSubmittingReview(true);
+      const res = await fetch(
+        `http://localhost:5000/api/reviews/product/${id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            rating: Number(newReview.rating),
+            comment: newReview.comment,
+          }),
+        },
+      );
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to submit review');
+
+      await fetchReviews();
+      await fetchProduct();
+      setNewReview({ rating: 5, comment: '' });
+      setShowReviewForm(false);
+    } catch (err) {
+      setReviewError(err.message);
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
-  const totalReviews = reviews.length;
+  const totalReviews = product.numReviews || reviews.length;
   const avgRating =
-    totalReviews > 0
-      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
-      : product.rating;
+    product.rating && product.rating > 0
+      ? Number(product.rating).toFixed(1)
+      : reviews.length > 0
+        ? (
+            reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
+          ).toFixed(1)
+        : '0.0';
 
   return (
     <div className="product-page">
@@ -91,21 +192,46 @@ const Product = () => {
           {/* LEFT */}
           <div className="product-gallery">
             <div className="main-image">
-              <img
-                src={images[activeImage] || "https://via.placeholder.com/200"}
-                alt={product.name}
-              />
+              {activeMedia?.type === 'video' ? (
+                <video
+                  src={activeMedia.url}
+                  controls
+                  style={{ width: '100%', maxHeight: '400px', objectFit: 'contain', background: '#000' }}
+                />
+              ) : (
+                <img
+                  src={activeMedia?.url || "https://via.placeholder.com/200"}
+                  alt={product.name}
+                />
+              )}
             </div>
 
             <div className="thumbnail-list">
-              {images.map((img, idx) => (
-                <img
+              {media.map((m, idx) => (
+                <div
                   key={idx}
-                  src={img}
-                  alt=""
                   className={`thumbnail ${idx === activeImage ? 'active' : ''}`}
                   onClick={() => setActiveImage(idx)}
-                />
+                  style={{ position: 'relative', cursor: 'pointer' }}
+                >
+                  {m.type === 'video' ? (
+                    <>
+                      <video src={m.url} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <span style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        color: 'white',
+                        fontSize: '1.2rem',
+                        textShadow: '0 0 4px rgba(0,0,0,0.8)',
+                        pointerEvents: 'none',
+                      }}>▶</span>
+                    </>
+                  ) : (
+                    <img src={m.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -176,8 +302,57 @@ const Product = () => {
               </div>
 
               <div className="action-buttons">
-                <button className="add-to-cart-btn">Add to Cart</button>
-                <button className="buy-now-btn">Buy Now</button>
+                <button
+                  className="add-to-cart-btn"
+                  disabled={product.stock < 1}
+                  onClick={() => {
+                    const userType = localStorage.getItem("userType");
+                    if (userType === "farmer") {
+                      alert("You're logged in as a Farmer. To buy products, please create or login with a Customer account.");
+                      return;
+                    }
+                    addItem(product, quantity);
+                    alert("Added to cart");
+                  }}
+                >
+                  {product.stock < 1 ? "Out of Stock" : "Add to Cart"}
+                </button>
+                <button
+                  className="buy-now-btn"
+                  disabled={product.stock < 1}
+                  onClick={() => {
+                    const ut = localStorage.getItem("userType");
+                    if (ut === "farmer") {
+                      alert("You're logged in as a Farmer. To buy products, please create or login with a Customer account.");
+                      return;
+                    }
+                    addItem(product, quantity);
+                    if (!localStorage.getItem("token")) {
+                      navigate("/login", { state: { from: { pathname: "/checkout" } } });
+                    } else {
+                      navigate("/checkout");
+                    }
+                  }}
+                >
+                  Buy Now
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleWishlist}
+                  title={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                  style={{
+                    background: 'transparent',
+                    border: '2px solid ' + (inWishlist ? '#d32f2f' : '#c8e6c9'),
+                    borderRadius: '50%',
+                    width: 44,
+                    height: 44,
+                    cursor: 'pointer',
+                    fontSize: '1.4rem',
+                    flexShrink: 0,
+                  }}
+                >
+                  {inWishlist ? '❤️' : '🤍'}
+                </button>
               </div>
             </div>
 
@@ -193,7 +368,11 @@ const Product = () => {
               <h4>Seller Information</h4>
               <p><strong>{product.farmer?.fullName}</strong></p>
               <p>📍 {product.farmer?.address}</p>
-              <p>⭐ {product.rating}</p>
+              <p>
+                ⭐ {Number(product.farmer?.rating || 0).toFixed(1)}
+                {' '}
+                <small>({product.farmer?.totalReviews || 0} reviews)</small>
+              </p>
               <p>📞 {product.farmer?.mobile}</p>
               <p>📦 Ships within 24 hours</p>
             </div>
@@ -233,19 +412,32 @@ const Product = () => {
           {showReviewForm && (
             <div className="review-form">
               <h3>Write Your Review</h3>
+              {!token && (
+                <p style={{ color: 'crimson' }}>
+                  You need to login to post a review.
+                </p>
+              )}
+              {token && currentUserName && (
+                <p style={{ color: '#555', marginBottom: '0.5rem' }}>
+                  Posting as <strong>{currentUserName}</strong>
+                </p>
+              )}
               <form onSubmit={handleReviewSubmit}>
 
                 <div className="form-group">
-                  <label>Your Name</label>
-                  <input
-                    type="text"
-                    value={newReview.name}
+                  <label>Your Rating</label>
+                  <select
+                    value={newReview.rating}
                     onChange={(e) =>
-                      setNewReview({ ...newReview, name: e.target.value })
+                      setNewReview({ ...newReview, rating: e.target.value })
                     }
-                    placeholder="Enter your name"
-                    required
-                  />
+                  >
+                    <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                    <option value="4">⭐⭐⭐⭐ (4)</option>
+                    <option value="3">⭐⭐⭐ (3)</option>
+                    <option value="2">⭐⭐ (2)</option>
+                    <option value="1">⭐ (1)</option>
+                  </select>
                 </div>
 
                 <div className="form-group">
@@ -260,8 +452,16 @@ const Product = () => {
                   />
                 </div>
 
-                <button type="submit" className="submit-review-btn">
-                  Submit Review
+                {reviewError && (
+                  <p style={{ color: 'crimson' }}>{reviewError}</p>
+                )}
+
+                <button
+                  type="submit"
+                  className="submit-review-btn"
+                  disabled={submittingReview || !token}
+                >
+                  {submittingReview ? 'Submitting...' : 'Submit Review'}
                 </button>
 
               </form>
@@ -271,8 +471,18 @@ const Product = () => {
           <div className="reviews-list">
             {reviews.length > 0 ? (
               reviews.map((r) => (
-                <div key={r.id} className="review-card">
-                  <p><strong>{r.user}</strong></p>
+                <div key={r._id} className="review-card">
+                  <p>
+                    <strong>{r.user?.fullName || 'Anonymous'}</strong>
+                    {' '}
+                    <span style={{ color: '#f5a623' }}>
+                      {'⭐'.repeat(r.rating)}
+                    </span>
+                    {' '}
+                    <small style={{ color: '#888' }}>
+                      {new Date(r.createdAt).toLocaleDateString()}
+                    </small>
+                  </p>
                   <p>{r.comment}</p>
                 </div>
               ))

@@ -1,70 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./Service.css";
 
-const services = [
-  {
-    icon: "📍",
-    title: "Nearby Farmer Marketplace",
-    desc: "Find farmers and buyers near your location with district wise filtering for easy trading."
-  },
-  {
-    icon: "⭐",
-    title: "Product Ratings & Reviews",
-    desc: "Users can rate and review products to maintain quality and trust in the marketplace."
-  },
-  {
-    icon: "💳",
-    title: "Secure Payment Integration",
-    desc: "Safe and secure digital payments for buying agricultural products online."
-  },
-  {
-    icon: "🧾",
-    title: "Automatic Bill Generation",
-    desc: "Instant invoice generation after order confirmation for transparency."
-  },
-  {
-    icon: "🛒",
-    title: "Add to Cart & Order System",
-    desc: "Simple shopping cart system to place orders directly from farmers."
-  },
-  {
-    icon: "📞",
-    title: "Direct Farmer Contact",
-    desc: "Contact farmers directly from each product page for negotiation and queries."
-  },
-  {
-    icon: "🌦",
-    title: "Weather Information",
-    desc: "Real-time weather updates to help farmers plan their agricultural activities."
-  },
-  {
-    icon: "🌱",
-    title: "Farming Guidance",
-    desc: "Expert tips and agriculture guidance for better crop production."
-  },
-  {
-    icon: "🏛",
-    title: "Government Schemes",
-    desc: "Latest government agriculture schemes and benefits for farmers."
-  },
-  {
-    icon: "🧑‍🌾",
-    title: "Farmer Verification",
-    desc: "Seller verification using Aadhaar to ensure trusted farmers on the platform."
-  },
-  {
-    icon: "📊",
-    title: "Buyer & Seller Dashboard",
-    desc: "Separate dashboards for buyers and farmers to manage orders and products."
-  },
-  {
-    icon: "📩",
-    title: "Query & Support System",
-    desc: "Users can ask farming related questions and get expert support."
-  }
-];
-
 function Service() {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/services");
+        if (!res.ok) throw new Error("Failed to load services");
+        const data = await res.json();
+        setServices(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchServices();
+  }, []);
+
   return (
     <div className="service-page">
 
@@ -76,9 +33,12 @@ function Service() {
         </p>
       </div>
 
+      {loading && <p style={{ textAlign: "center" }}>Loading services...</p>}
+      {error && <p style={{ textAlign: "center", color: "crimson" }}>{error}</p>}
+
       <div className="service-grid">
-        {services.map((service, index) => (
-          <div className="service-card" key={index}>
+        {services.map((service) => (
+          <div className="service-card" key={service._id}>
             <div className="service-icon">{service.icon}</div>
             <h3>{service.title}</h3>
             <p>{service.desc}</p>

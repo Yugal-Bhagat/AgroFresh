@@ -2,8 +2,49 @@ import React, { useState } from 'react';
 import './Feedback.css';
 
 const Feedback = () => {
-  const [rating, setRating] = useState(0);
+  const [form, setForm] = useState({
+    name: localStorage.getItem('userName') || '',
+    email: '',
+    category: '',
+    message: '',
+  });
+  const [rating, setRating] = useState(5);
   const [hover, setHover] = useState(0);
+  const [status, setStatus] = useState({ loading: false, success: '', error: '' });
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus({ loading: true, success: '', error: '' });
+
+    if (rating < 1) {
+      setStatus({ loading: false, success: '', error: 'Please select a rating.' });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ ...form, rating }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to submit feedback');
+
+      setStatus({ loading: false, success: data.message, error: '' });
+      setForm({ name: form.name, email: '', category: '', message: '' });
+      setRating(5);
+    } catch (err) {
+      setStatus({ loading: false, success: '', error: err.message });
+    }
+  };
 
   return (
     <div className="feedback-page">
@@ -13,21 +54,36 @@ const Feedback = () => {
           <p>Help us improve AgroFresh by sharing your experience</p>
         </div>
 
-        <form className="feedback-form">
+        <form className="feedback-form" onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-group">
-              <input type="text" id="name" placeholder=" " required />
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder=" "
+                required
+              />
               <label htmlFor="name">Your Name</label>
             </div>
 
             <div className="form-group">
-              <input type="email" id="email" placeholder=" " />
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder=" "
+              />
               <label htmlFor="email">Email (optional)</label>
             </div>
           </div>
 
           <div className="form-group">
-            <select id="category" defaultValue="">
+            <select id="category" name="category" value={form.category} onChange={handleChange}>
               <option value="" disabled hidden></option>
               <option value="general">General Feedback</option>
               <option value="product">Product Quality</option>
@@ -50,6 +106,7 @@ const Feedback = () => {
                     onClick={() => setRating(ratingValue)}
                     onMouseEnter={() => setHover(ratingValue)}
                     onMouseLeave={() => setHover(0)}
+                    style={{ cursor: 'pointer' }}
                   >
                     {ratingValue <= (hover || rating) ? '★' : '☆'}
                   </span>
@@ -59,11 +116,28 @@ const Feedback = () => {
           </div>
 
           <div className="form-group">
-            <textarea id="message" rows="5" placeholder=" " required></textarea>
+            <textarea
+              id="message"
+              name="message"
+              rows="5"
+              value={form.message}
+              onChange={handleChange}
+              placeholder=" "
+              required
+            ></textarea>
             <label htmlFor="message">Your Feedback</label>
           </div>
 
-          <button type="submit" className="submit-btn">Submit Feedback</button>
+          {status.success && (
+            <p style={{ color: '#2e7d32', fontWeight: 500 }}>{status.success}</p>
+          )}
+          {status.error && (
+            <p style={{ color: 'crimson', fontWeight: 500 }}>{status.error}</p>
+          )}
+
+          <button type="submit" className="submit-btn" disabled={status.loading}>
+            {status.loading ? 'Submitting...' : 'Submit Feedback'}
+          </button>
         </form>
 
         <div className="feedback-footer">

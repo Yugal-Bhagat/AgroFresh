@@ -37,6 +37,12 @@ const productSchema = new mongoose.Schema(
       },
     ],
 
+    videos: [
+      {
+        type: String,
+      },
+    ],
+
     farmer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

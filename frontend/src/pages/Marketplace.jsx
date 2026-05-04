@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 import './Marketplace.css';
 
 const Marketplace = () => {
   const userType = localStorage.getItem("userType");
+  const { addItem } = useCart();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -154,7 +156,21 @@ const Marketplace = () => {
                     )}
                   </div>
 
-                  <button className="add-to-cart">Add to Cart</button>
+                  <button
+                    className="add-to-cart"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (userType === "farmer") {
+                        alert("You're logged in as a Farmer. To buy products, please create or login with a Customer account.");
+                        return;
+                      }
+                      addItem(product, 1);
+                      alert(`${product.name} added to cart`);
+                    }}
+                  >
+                    Add to Cart
+                  </button>
                 </div>
               </Link>
             ))

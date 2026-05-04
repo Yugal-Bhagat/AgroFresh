@@ -1,7 +1,101 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./About.css";
 
+const fallbackFeedbacks = [
+    { _id: 'f1', name: 'Rajesh Farmer', userType: 'farmer', rating: 5, message: 'AgroFresh has transformed my farming business. I now earn fair prices directly!' },
+    { _id: 'f2', name: 'Priya Customer', userType: 'customer', rating: 5, message: 'Fresh organic produce delivered to my doorstep. Highly recommended!' },
+    { _id: 'f3', name: 'Kumar Farmer', userType: 'farmer', rating: 5, message: 'The farming tips and resources have improved my crop yield significantly.' },
+];
+
+const roleLabel = (userType) => {
+    if (userType === 'farmer') return 'Farmer';
+    if (userType === 'customer') return 'Customer';
+    return '';
+};
+
+const formatStat = (n) => {
+    if (n >= 1000) return `${Math.floor(n / 1000)}k+`;
+    if (n >= 100) return `${Math.floor(n / 100) * 100}+`;
+    if (n >= 10) return `${Math.floor(n / 10) * 10}+`;
+    return `${n}`;
+};
+
 const About = () => {
+    const [feedbacks, setFeedbacks] = useState([]);
+    const [stats, setStats] = useState({
+        farmers: 0,
+        customers: 0,
+        products: 0,
+        farmingResources: 0,
+    });
+    const [services, setServices] = useState([]);
+    const [carouselIndex, setCarouselIndex] = useState(0);
+    const carouselTimer = useRef(null);
+
+    useEffect(() => {
+        const fetchAll = async () => {
+            try {
+                const [fbRes, statsRes, svcRes] = await Promise.all([
+                    fetch("http://localhost:5000/api/feedback?limit=6"),
+                    fetch("http://localhost:5000/api/stats"),
+                    fetch("http://localhost:5000/api/services"),
+                ]);
+
+                if (fbRes.ok) {
+                    const data = await fbRes.json();
+                    setFeedbacks(data.length > 0 ? data : fallbackFeedbacks);
+                } else {
+                    setFeedbacks(fallbackFeedbacks);
+                }
+
+                if (statsRes.ok) {
+                    const data = await statsRes.json();
+                    setStats(data);
+                }
+
+                if (svcRes.ok) {
+                    const data = await svcRes.json();
+                    setServices(data);
+                }
+            } catch {
+                setFeedbacks(fallbackFeedbacks);
+            }
+        };
+        fetchAll();
+    }, []);
+
+    useEffect(() => {
+        if (services.length <= 3) return;
+        carouselTimer.current = setInterval(() => {
+            setCarouselIndex((i) => (i + 1) % services.length);
+        }, 4000);
+        return () => clearInterval(carouselTimer.current);
+    }, [services.length]);
+
+    const pauseCarousel = () => {
+        if (carouselTimer.current) clearInterval(carouselTimer.current);
+    };
+
+    const visibleServices = (() => {
+        if (services.length === 0) return [];
+        if (services.length <= 3) return services;
+        return [
+            services[carouselIndex % services.length],
+            services[(carouselIndex + 1) % services.length],
+            services[(carouselIndex + 2) % services.length],
+        ];
+    })();
+
+    const goPrev = () => {
+        pauseCarousel();
+        setCarouselIndex((i) => (i - 1 + services.length) % services.length);
+    };
+
+    const goNext = () => {
+        pauseCarousel();
+        setCarouselIndex((i) => (i + 1) % services.length);
+    };
+
     return (
         <section className="about">
 
@@ -40,59 +134,83 @@ const About = () => {
             <div className="about-stats">
 
                 <div className="stat">
-                    <h2>1000+</h2>
+                    <h2>{formatStat(stats.farmers)}</h2>
                     <p>Farmers Connected</p>
                 </div>
 
                 <div className="stat">
-                    <h2>5000+</h2>
+                    <h2>{formatStat(stats.customers)}</h2>
                     <p>Customers Served</p>
                 </div>
 
                 <div className="stat">
-                    <h2>200+</h2>
+                    <h2>{formatStat(stats.products)}</h2>
                     <p>Products Available</p>
                 </div>
 
                 <div className="stat">
-                    <h2>50+</h2>
+                    <h2>{formatStat(stats.farmingResources)}</h2>
                     <p>Farming Resources</p>
                 </div>
 
             </div>
 
-            {/* Features */}
+            {/* Features Carousel */}
             <div className="about-features">
 
                 <h2>Platform Features</h2>
 
-                <div className="feature-grid">
+                {services.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#888' }}>Loading platform features...</p>
+                ) : (
+                    <div className="features-carousel">
+                        {services.length > 3 && (
+                            <button
+                                className="carousel-btn prev"
+                                onClick={goPrev}
+                                aria-label="Previous"
+                            >
+                                ‹
+                            </button>
+                        )}
 
-                    <div className="feature-box">
-                        <span>🛒</span>
-                        <h3>Farmer Marketplace</h3>
-                        <p>Farmers can directly sell crops to customers without middlemen.</p>
+                        <div className="feature-grid carousel-track">
+                            {visibleServices.map((svc) => (
+                                <div className="feature-box" key={svc._id}>
+                                    <span>{svc.icon || '🌱'}</span>
+                                    <h3>{svc.title}</h3>
+                                    <p>{svc.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {services.length > 3 && (
+                            <button
+                                className="carousel-btn next"
+                                onClick={goNext}
+                                aria-label="Next"
+                            >
+                                ›
+                            </button>
+                        )}
                     </div>
+                )}
 
-                    <div className="feature-box">
-                        <span>📚</span>
-                        <h3>Farming Tips</h3>
-                        <p>Learn modern farming techniques and best practices.</p>
+                {services.length > 3 && (
+                    <div className="carousel-dots">
+                        {services.map((_, i) => (
+                            <button
+                                key={i}
+                                className={`dot ${i === carouselIndex ? 'active' : ''}`}
+                                onClick={() => {
+                                    pauseCarousel();
+                                    setCarouselIndex(i);
+                                }}
+                                aria-label={`Go to slide ${i + 1}`}
+                            />
+                        ))}
                     </div>
-
-                    <div className="feature-box">
-                        <span>🏛</span>
-                        <h3>Government Schemes</h3>
-                        <p>Stay updated with agriculture schemes and subsidies.</p>
-                    </div>
-
-                    <div className="feature-box">
-                        <span>🌾</span>
-                        <h3>Agro Store</h3>
-                        <p>Buy seeds, fertilizers and farming equipment online.</p>
-                    </div>
-
-                </div>
+                )}
 
             </div>
 
@@ -102,22 +220,18 @@ const About = () => {
                 <h2>What People Say</h2>
 
                 <div className="feedback-grid">
-
-                    <div className="feedback-card">
-                        <p>"AgroFresh has transformed my farming business. I now earn fair prices directly!"</p>
-                        <h4>- Rajesh Farmer</h4>
-                    </div>
-
-                    <div className="feedback-card">
-                        <p>"Fresh organic produce delivered to my doorstep. Highly recommended!"</p>
-                        <h4>- Priya Customer</h4>
-                    </div>
-
-                    <div className="feedback-card">
-                        <p>"The farming tips and resources have improved my crop yield significantly."</p>
-                        <h4>- Kumar Farmer</h4>
-                    </div>
-
+                    {feedbacks.map((fb) => {
+                        const role = roleLabel(fb.userType);
+                        return (
+                            <div className="feedback-card" key={fb._id}>
+                                <p style={{ color: '#f5a623', marginBottom: '0.5rem' }}>
+                                    {'★'.repeat(fb.rating || 5)}{'☆'.repeat(5 - (fb.rating || 5))}
+                                </p>
+                                <p>"{fb.message}"</p>
+                                <h4>- {fb.name}{role && ` (${role})`}</h4>
+                            </div>
+                        );
+                    })}
                 </div>
 
             </div>

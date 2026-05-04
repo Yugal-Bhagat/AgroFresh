@@ -80,8 +80,34 @@ const userSchema = new mongoose.Schema(
       ifscCode: String,
       accountHolderName: String,
     },
+
+    // Farmer dashboard fields
+    totalEarnings: {
+      type: Number,
+      default: 0,
+    },
+
+    totalSales: {
+      type: Number,
+      default: 0,
+    },
+
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+
+    isSellingEnabled: {
+      type: Boolean,
+      default: false,
+    },
+
+    sellerVerificationApplication: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SellerVerification",
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("User", userSchema);

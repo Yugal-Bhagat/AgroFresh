@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./Navbar.css";
+import { useCart } from "../../context/CartContext";
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -8,6 +9,37 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { count } = useCart();
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  useEffect(() => {
+    const fetchWishlistCount = async () => {
+      const token = localStorage.getItem("token");
+      const type = localStorage.getItem("userType");
+      if (!token || type !== "customer") {
+        setWishlistCount(0);
+        return;
+      }
+      try {
+        const res = await fetch("http://localhost:5000/api/wishlist", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setWishlistCount((data.products || []).filter(Boolean).length);
+      } catch {
+        /* ignore */
+      }
+    };
+    fetchWishlistCount();
+    const onStorage = () => fetchWishlistCount();
+    window.addEventListener("focus", fetchWishlistCount);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("focus", fetchWishlistCount);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [location]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -81,6 +113,29 @@ const Navbar = () => {
 
         {/* Login/Profile Button */}
         <div className="nav-actions">
+          {userType !== "farmer" && userType !== "admin" && (
+            <Link
+              to={isLoggedIn ? "/customer-dashboard" : "/login"}
+              className="cart-nav-link"
+              aria-label="Wishlist"
+              onClick={(e) => {
+                if (isLoggedIn) {
+                  e.preventDefault();
+                  navigate("/customer-dashboard", { state: { tab: "wishlist" } });
+                }
+              }}
+              title="Wishlist"
+            >
+              <span className="cart-nav-icon">❤️</span>
+              {wishlistCount > 0 && (
+                <span className="cart-nav-badge">{wishlistCount}</span>
+              )}
+            </Link>
+          )}
+          <Link to="/cart" className="cart-nav-link" aria-label="Cart">
+            <span className="cart-nav-icon">🛒</span>
+            {count > 0 && <span className="cart-nav-badge">{count}</span>}
+          </Link>
           {isLoggedIn ? (
             <div className="profile-menu">
               <button className="profile-btn" onClick={handleProfile}>

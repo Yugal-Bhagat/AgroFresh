@@ -20,7 +20,7 @@ export const addProduct = async (req, res) => {
       });
     }
 
-    const { name, price, stock, quantityUnit, description, category, images } =
+    const { name, price, stock, quantityUnit, description, category } =
       req.body;
 
     // ✅ Basic validation
@@ -30,6 +30,21 @@ export const addProduct = async (req, res) => {
       });
     }
 
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const toUrl = (f) => `${baseUrl}/uploads/${f.filename}`;
+
+    const uploadedImages = (req.files?.images || []).map(toUrl);
+    const uploadedVideos = (req.files?.videos || []).map(toUrl);
+
+    const fallbackImages = req.body.imageUrl
+      ? Array.isArray(req.body.imageUrl)
+        ? req.body.imageUrl
+        : [req.body.imageUrl]
+      : [];
+
+    const images = [...uploadedImages, ...fallbackImages];
+    const videos = uploadedVideos;
+
     const product = await Product.create({
       name,
       price,
@@ -38,6 +53,7 @@ export const addProduct = async (req, res) => {
       description,
       category,
       images,
+      videos,
       farmer: user._id,
     });
 

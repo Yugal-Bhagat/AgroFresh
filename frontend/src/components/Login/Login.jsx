@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./Login.css";
+import { useCart } from "../../context/CartContext";
 
 const Login = () => {
+  const { mergeWithBackend } = useCart();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -38,9 +40,14 @@ const Login = () => {
         localStorage.setItem("userName", data.user.fullName);
         localStorage.setItem("userId", data.user._id);
 
+        // Merge guest cart with server-side cart
+        await mergeWithBackend();
+
         // Redirect based on userType
         if (data.user.userType === "farmer") {
           navigate("/farmer-dashboard");
+        } else if (data.user.userType === "admin") {
+          navigate("/admin-dashboard");
         } else {
           // For customer, redirect to the page they came from or marketplace
           const from = location.state?.from?.pathname || "/marketplace";

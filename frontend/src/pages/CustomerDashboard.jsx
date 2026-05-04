@@ -1,11 +1,44 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './CustomerDashboard.css';
 
 const CustomerDashboard = () => {
-    const [activeTab, setActiveTab] = useState('overview');
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState(location.state?.tab || 'overview');
     const [isEditing, setIsEditing] = useState(false);
+    const [orders, setOrders] = useState([]);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (location.state?.tab) setActiveTab(location.state.tab);
+    }, [location.state]);
+
+    useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const res = await fetch('http://localhost:5000/api/orders/my', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                setOrders(
+                    data.map((o) => ({
+                        id: `#${o._id.slice(-6).toUpperCase()}`,
+                        date: new Date(o.createdAt).toLocaleDateString(),
+                        items: o.products.reduce((s, p) => s + p.quantity, 0),
+                        total: o.totalAmount,
+                        status: o.orderStatus,
+                        farmer: o.farmer?.fullName || '—',
+                    })),
+                );
+            } catch (err) {
+                console.error('Orders fetch failed', err);
+            }
+        };
+        fetchOrders();
+    }, []);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -13,30 +46,111 @@ const CustomerDashboard = () => {
         navigate("/login");
     };
 
-    // Dummy user data
     const [user, setUser] = useState({
-        name: 'Rahul Sharma',
-        email: 'rahul.sharma@example.com',
-        phone: '+91 98765 43210',
-        address: '123 Green Street, Farmville, Delhi - 110001',
-        joinDate: 'January 15, 2026',
-        avatar: '👨‍🌾'
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        joinDate: '',
+        avatar: '👤',
     });
 
-    // Dummy orders data
-    const orders = [
-        { id: '#ORD001', date: 'Mar 15, 2026', items: 3, total: 450, status: 'delivered', farmer: 'Ramesh Kumar' },
-        { id: '#ORD002', date: 'Mar 10, 2026', items: 2, total: 240, status: 'shipped', farmer: 'Priya Sharma' },
-        { id: '#ORD003', date: 'Mar 5, 2026', items: 5, total: 890, status: 'processing', farmer: 'Green Fields' },
-        { id: '#ORD004', date: 'Feb 28, 2026', items: 1, total: 120, status: 'delivered', farmer: 'Happy Hens' }
-    ];
+    const [wishlist, setWishlist] = useState([]);
 
-    // Dummy wishlist
-    const wishlist = [
-        { id: 1, name: 'Organic Apples', price: 120, unit: 'kg', farmer: 'Priya Sharma', image: '🍎' },
-        { id: 2, name: 'Fresh Tomatoes', price: 40, unit: 'kg', farmer: 'Ramesh Kumar', image: '🍅' },
-        { id: 3, name: 'Free Range Eggs', price: 90, unit: 'dozen', farmer: 'Happy Hens', image: '🥚' }
-    ];
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+
+        const fetchProfile = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/auth/profile', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const u = data.user || data;
+                setUser({
+                    name: u.fullName || '',
+                    email: u.email || '',
+                    phone: u.mobile || '',
+                    address: u.address || '',
+                    joinDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '',
+                    avatar: '👤',
+                });
+            } catch (err) {
+                console.error('Profile fetch failed', err);
+            }
+        };
+
+        const fetchWishlist = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/wishlist', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                setWishlist(
+                    (data.products || []).filter(Boolean).map((p) => ({
+                        id: p._id,
+                        name: p.name,
+                        price: p.price,
+                        unit: p.quantityUnit,
+                        farmer: p.farmer?.fullName || '—',
+                        image: p.images?.[0] || '',
+                    })),
+                );
+            } catch (err) {
+                console.error('Wishlist fetch failed', err);
+            }
+        };
+
+        fetchProfile();
+        fetchWishlist();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const removeFromWishlist = async (productId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:5000/api/wishlist/${productId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error('Failed to remove');
+            setWishlist((prev) => prev.filter((w) => w.id !== productId));
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    const saveProfile = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/auth/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    fullName: user.name,
+                    mobile: user.phone,
+                    address: user.address,
+                }),
+            });
+            if (!res.ok) {
+                const d = await res.json();
+                throw new Error(d.message || 'Failed to update profile');
+            }
+            setIsEditing(false);
+            alert('Profile updated');
+        } catch (err) {
+            alert(err.message);
+        }
+    };
 
     const getStatusBadge = (status) => {
         const badges = {
@@ -220,22 +334,61 @@ const CustomerDashboard = () => {
                     {activeTab === 'wishlist' && (
                         <div className="tab-content fade-in">
                             <h2>My Wishlist</h2>
-                            <div className="wishlist-grid">
-                                {wishlist.map(item => (
-                                    <div className="wishlist-card" key={item.id}>
-                                        <div className="wishlist-image">{item.image}</div>
-                                        <div className="wishlist-details">
-                                            <h4>{item.name}</h4>
-                                            <p className="wishlist-farmer">{item.farmer}</p>
-                                            <p className="wishlist-price">₹{item.price}/{item.unit}</p>
+                            {wishlist.length === 0 ? (
+                                <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
+                                    <p>Your wishlist is empty.</p>
+                                    <Link
+                                        to="/marketplace"
+                                        style={{
+                                            display: 'inline-block',
+                                            marginTop: '1rem',
+                                            background: '#2e7d32',
+                                            color: 'white',
+                                            padding: '8px 18px',
+                                            borderRadius: '20px',
+                                            textDecoration: 'none',
+                                        }}
+                                    >
+                                        Browse Marketplace
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="wishlist-grid">
+                                    {wishlist.map(item => (
+                                        <div className="wishlist-card" key={item.id}>
+                                            {item.image ? (
+                                                <img
+                                                    src={item.image}
+                                                    alt={item.name}
+                                                    style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 8 }}
+                                                />
+                                            ) : (
+                                                <div className="wishlist-image">🛒</div>
+                                            )}
+                                            <div className="wishlist-details">
+                                                <h4>{item.name}</h4>
+                                                <p className="wishlist-farmer">by {item.farmer}</p>
+                                                <p className="wishlist-price">₹{item.price}/{item.unit}</p>
+                                            </div>
+                                            <div className="wishlist-actions">
+                                                <Link
+                                                    to={`/product/${item.id}`}
+                                                    className="add-cart-wishlist"
+                                                    style={{ textAlign: 'center', textDecoration: 'none' }}
+                                                >
+                                                    View Product
+                                                </Link>
+                                                <button
+                                                    className="remove-wishlist"
+                                                    onClick={() => removeFromWishlist(item.id)}
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="wishlist-actions">
-                                            <button className="add-cart-wishlist">Add to Cart</button>
-                                            <button className="remove-wishlist">Remove</button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -255,22 +408,22 @@ const CustomerDashboard = () => {
                                 </div>
                                 <div className="form-group">
                                     <label>Email Address</label>
-                                    <input type="email" value={user.email} disabled={!isEditing} />
+                                    <input type="email" value={user.email} disabled />
                                 </div>
                                 <div className="form-group">
                                     <label>Phone Number</label>
-                                    <input type="tel" value={user.phone} disabled={!isEditing} />
+                                    <input type="tel" value={user.phone} disabled={!isEditing} onChange={(e) => setUser({ ...user, phone: e.target.value })} />
                                 </div>
                                 <div className="form-group">
                                     <label>Address</label>
-                                    <textarea rows="3" value={user.address} disabled={!isEditing}></textarea>
+                                    <textarea rows="3" value={user.address} disabled={!isEditing} onChange={(e) => setUser({ ...user, address: e.target.value })}></textarea>
                                 </div>
                                 <div className="form-group">
                                     <label>Member Since</label>
                                     <input type="text" value={user.joinDate} disabled />
                                 </div>
                                 {isEditing && (
-                                    <button className="save-btn">Save Changes</button>
+                                    <button className="save-btn" onClick={saveProfile}>Save Changes</button>
                                 )}
                             </div>
                         </div>
@@ -284,26 +437,21 @@ const CustomerDashboard = () => {
                                 <button className="add-address-btn">+ Add New Address</button>
                             </div>
                             <div className="addresses-grid">
-                                <div className="address-card default">
-                                    <div className="address-badge">Default</div>
-                                    <h4>Home</h4>
-                                    <p>{user.address}</p>
-                                    <p>Phone: {user.phone}</p>
-                                    <div className="address-actions">
-                                        <button>Edit</button>
-                                        <button>Delete</button>
+                                {user.address ? (
+                                    <div className="address-card default">
+                                        <div className="address-badge">Default</div>
+                                        <h4>Home</h4>
+                                        <p>{user.address}</p>
+                                        <p>Phone: {user.phone}</p>
+                                        <div className="address-actions">
+                                            <button onClick={() => setActiveTab('profile')}>Edit in Profile</button>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="address-card">
-                                    <h4>Farm Office</h4>
-                                    <p>456 Agriculture Complex, Rural District, Delhi - 110002</p>
-                                    <p>Phone: +91 98765 43211</p>
-                                    <div className="address-actions">
-                                        <button>Set Default</button>
-                                        <button>Edit</button>
-                                        <button>Delete</button>
-                                    </div>
-                                </div>
+                                ) : (
+                                    <p style={{ background: 'white', padding: '1.5rem', borderRadius: '12px' }}>
+                                        No address saved yet. Add one in your Profile tab.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
