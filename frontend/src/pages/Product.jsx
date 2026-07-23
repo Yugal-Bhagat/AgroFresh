@@ -21,9 +21,16 @@ const Product = () => {
   const [reviewError, setReviewError] = useState('');
   const [inWishlist, setInWishlist] = useState(false);
 
+  const [farmerRatingStats, setFarmerRatingStats] = useState({ avg: 0, count: 0, ratings: [] });
+  const [showFarmerRatingForm, setShowFarmerRatingForm] = useState(false);
+  const [myFarmerRating, setMyFarmerRating] = useState({ rating: 5, comment: '' });
+  const [submittingFarmerRating, setSubmittingFarmerRating] = useState(false);
+  const [farmerRatingError, setFarmerRatingError] = useState('');
+
   const token = localStorage.getItem('token');
   const currentUserName = localStorage.getItem('userName');
   const userType = localStorage.getItem('userType');
+  const currentUserId = localStorage.getItem('userId');
 
   const checkWishlist = async () => {
     if (!token || userType !== 'customer') return;
@@ -86,11 +93,80 @@ const Product = () => {
     }
   };
 
+  const fetchFarmerRatings = async (farmerId) => {
+    if (!farmerId) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/farmers/${farmerId}/ratings`);
+      if (!res.ok) throw new Error('Failed to load farmer ratings');
+      const data = await res.json();
+      setFarmerRatingStats(data);
+
+      if (currentUserId) {
+        const mine = (data.ratings || []).find(
+          (r) => r.user && r.user._id === currentUserId
+        );
+        if (mine) {
+          setMyFarmerRating({ rating: mine.rating, comment: mine.comment || '' });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleFarmerRatingSubmit = async (e) => {
+    e.preventDefault();
+    setFarmerRatingError('');
+
+    if (!token) {
+      setFarmerRatingError('Please login to rate this farmer.');
+      return;
+    }
+
+    if (userType === 'farmer' && product?.farmer?._id === currentUserId) {
+      setFarmerRatingError("You can't rate yourself.");
+      return;
+    }
+
+    try {
+      setSubmittingFarmerRating(true);
+      const res = await fetch(
+        `http://localhost:5000/api/farmers/${product.farmer._id}/ratings`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            rating: Number(myFarmerRating.rating),
+            comment: myFarmerRating.comment,
+          }),
+        }
+      );
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to submit rating');
+
+      await fetchFarmerRatings(product.farmer._id);
+      await fetchProduct();
+      setShowFarmerRatingForm(false);
+    } catch (err) {
+      setFarmerRatingError(err.message);
+    } finally {
+      setSubmittingFarmerRating(false);
+    }
+  };
+
   const fetchProduct = async () => {
     try {
       const res = await fetch(`http://localhost:5000/api/products/${id}`);
       const data = await res.json();
       setProduct(data);
+
+      if (data?.farmer?._id) {
+        fetchFarmerRatings(data.farmer._id);
+      }
 
       const res2 = await fetch(`http://localhost:5000/api/products`);
       const allProducts = await res2.json();
@@ -242,7 +318,7 @@ const Product = () => {
 
             <div className="product-rating">
               <span className="rating-stars">⭐ {avgRating}</span>
-              <span className="rating-count">({product.numReviews} reviews)</span>
+              <span className="rating-count">({totalReviews} reviews)</span>
             </div>
 
             <div className="product-price-section">
@@ -259,6 +335,21 @@ const Product = () => {
                   {product.farmer?.verification?.status === "approved" && (
                     <span className="verified-badge-large">✓</span>
                   )}
+                </span>
+                <span className="seller-farmer-rating" style={{
+                  marginLeft: '0.75rem',
+                  background: '#fff8e1',
+                  color: '#b88200',
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '12px',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                }}>
+                  ⭐ {Number(farmerRatingStats.avg || product.farmer?.farmerAvgRating || 0).toFixed(1)}
+                  {' '}
+                  <small style={{ fontWeight: 400 }}>
+                    Farmer · {farmerRatingStats.count || product.farmer?.farmerRatingCount || 0} ratings
+                  </small>
                 </span>
               </div>
 
@@ -366,15 +457,156 @@ const Product = () => {
           <div className="product-sidebar">
             <div className="seller-card">
               <h4>Seller Information</h4>
-              <p><strong>{product.farmer?.fullName}</strong></p>
+              <p><strong>{product.farmer?.fullName}</strong>
+                {product.farmer?.verification?.status === 'approved' && (
+                  <span style={{ marginLeft: 6, color: '#2e7d32' }}>✓</span>
+                )}
+              </p>
               <p>📍 {product.farmer?.address}</p>
-              <p>
-                ⭐ {Number(product.farmer?.rating || 0).toFixed(1)}
+              <p style={{
+                background: '#fff8e1',
+                padding: '0.5rem 0.7rem',
+                borderRadius: 8,
+                color: '#b88200',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}>
+                ⭐ Farmer Rating: {Number(farmerRatingStats.avg || product.farmer?.farmerAvgRating || 0).toFixed(1)}
                 {' '}
-                <small>({product.farmer?.totalReviews || 0} reviews)</small>
+                <small style={{ fontWeight: 400, color: '#888' }}>
+                  ({farmerRatingStats.count || product.farmer?.farmerRatingCount || 0} ratings)
+                </small>
               </p>
               <p>📞 {product.farmer?.mobile}</p>
               <p>📦 Ships within 24 hours</p>
+
+              {/* Rate this Farmer */}
+              {product.farmer?._id && product.farmer._id !== currentUserId && (
+                <div style={{ marginTop: '0.75rem', borderTop: '1px solid #eee', paddingTop: '0.75rem' }}>
+                  {!showFarmerRatingForm ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!token) {
+                          alert('Please login to rate this farmer.');
+                          navigate('/login');
+                          return;
+                        }
+                        setShowFarmerRatingForm(true);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '0.55rem 0.75rem',
+                        background: '#2e7d32',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                      }}
+                    >
+                      ⭐ Rate this Farmer
+                    </button>
+                  ) : (
+                    <form onSubmit={handleFarmerRatingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.85rem', color: '#444' }}>Your Rating</label>
+                      <div style={{ display: 'flex', gap: 4, fontSize: '1.6rem', cursor: 'pointer' }}>
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <span
+                            key={s}
+                            onClick={() => setMyFarmerRating({ ...myFarmerRating, rating: s })}
+                            style={{
+                              color: s <= Number(myFarmerRating.rating) ? '#f5a623' : '#ddd',
+                              userSelect: 'none',
+                            }}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+
+                      <textarea
+                        rows="2"
+                        placeholder="Share a comment about this farmer (optional)"
+                        value={myFarmerRating.comment}
+                        onChange={(e) => setMyFarmerRating({ ...myFarmerRating, comment: e.target.value })}
+                        style={{
+                          padding: '0.5rem',
+                          borderRadius: 8,
+                          border: '1px solid #ddd',
+                          fontFamily: 'inherit',
+                          resize: 'vertical',
+                        }}
+                      />
+
+                      {farmerRatingError && (
+                        <p style={{ color: 'crimson', fontSize: '0.85rem', margin: 0 }}>
+                          {farmerRatingError}
+                        </p>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          type="submit"
+                          disabled={submittingFarmerRating}
+                          style={{
+                            flex: 1,
+                            padding: '0.5rem',
+                            background: '#2e7d32',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {submittingFarmerRating ? 'Saving...' : 'Submit'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowFarmerRatingForm(false);
+                            setFarmerRatingError('');
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '0.5rem',
+                            background: 'white',
+                            color: '#666',
+                            border: '1px solid #ddd',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              )}
+
+              {/* Recent farmer ratings */}
+              {farmerRatingStats.ratings && farmerRatingStats.ratings.length > 0 && (
+                <div style={{ marginTop: '0.75rem', borderTop: '1px solid #eee', paddingTop: '0.75rem' }}>
+                  <h5 style={{ margin: '0 0 0.5rem 0', color: '#1b5e20' }}>What customers say</h5>
+                  <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {farmerRatingStats.ratings.slice(0, 4).map((r) => (
+                      <div key={r._id} style={{ background: '#fafafa', padding: '0.5rem', borderRadius: 6, fontSize: '0.85rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <strong style={{ color: '#333' }}>{r.user?.fullName || 'Anonymous'}</strong>
+                          <span style={{ color: '#f5a623' }}>{'⭐'.repeat(r.rating)}</span>
+                        </div>
+                        {r.comment && (
+                          <p style={{ margin: '0.25rem 0 0 0', color: '#555' }}>{r.comment}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="offer-card">

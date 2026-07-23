@@ -1,5 +1,39 @@
 import User from "../models/User.js";
+import Review from "../models/Review.js";
+import Product from "../models/Product.js";
 import SellerVerification from "../models/SellerVerification.js";
+
+const recomputeProductRating = async (productId) => {
+  const reviews = await Review.find({ product: productId });
+  const numReviews = reviews.length;
+  const rating =
+    numReviews > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / numReviews
+      : 0;
+
+  await Product.findByIdAndUpdate(productId, {
+    rating: Number(rating.toFixed(2)),
+    numReviews,
+  });
+};
+
+const recomputeFarmerRating = async (farmerId) => {
+  const farmerProducts = await Product.find({ farmer: farmerId }).select("_id");
+  const productIds = farmerProducts.map((p) => p._id);
+
+  const reviews = await Review.find({ product: { $in: productIds } });
+  const totalReviews = reviews.length;
+  const avg =
+    totalReviews > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+      : 0;
+
+  await User.findByIdAndUpdate(farmerId, {
+    rating: Number(avg.toFixed(2)),
+    averageRating: Number(avg.toFixed(2)),
+    totalReviews,
+  });
+};
 
 export const getPendingFarmers = async (req, res) => {
   const farmers = await User.find({
@@ -27,6 +61,62 @@ export const verifyFarmer = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Verification failed",
+    });
+  }
+};
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('-password')
+      .sort({ createdAt: -1 });
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch users",
+    });
+  }
+};
+
+export const getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find()
+      .populate('user', 'fullName email')
+      .populate({
+        path: 'product',
+        select: 'name farmer',
+        populate: { path: 'farmer', select: 'fullName email' },
+      })
+      .sort({ createdAt: -1 });
+
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch reviews",
+    });
+  }
+};
+
+export const deleteReviewByAdmin = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+
+    const productId = review.product;
+    const product = await Product.findById(productId);
+
+    await review.deleteOne();
+    await recomputeProductRating(productId);
+    if (product) await recomputeFarmerRating(product.farmer);
+
+    res.json({ message: "Review deleted" });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete review",
+      error: error.message,
     });
   }
 };

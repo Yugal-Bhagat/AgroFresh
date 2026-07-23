@@ -17,6 +17,7 @@ import statsRoutes from "./routes/statsRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
+import farmerRatingRoutes from "./routes/farmerRatingRoutes.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/stats", statsRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/farmers", farmerRatingRoutes);
 
 // ❌ Route not found handler
 app.use((req, res) => {

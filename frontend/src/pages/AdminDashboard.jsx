@@ -31,6 +31,9 @@ const AdminDashboard = () => {
     const [schemeForm, setSchemeForm] = useState(emptySchemeForm);
     const [editingSchemeId, setEditingSchemeId] = useState(null);
     const [contactMessages, setContactMessages] = useState([]);
+    const [allUsers, setAllUsers] = useState([]);
+    const [usersFilter, setUsersFilter] = useState('all');
+    const [allReviews, setAllReviews] = useState([]);
 
     const fetchPendingFarmers = async () => {
         try {
@@ -108,6 +111,50 @@ const AdminDashboard = () => {
         }
     };
 
+    const fetchAllUsers = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch("http://localhost:5000/api/admin/users", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error("Failed to fetch users");
+            const data = await res.json();
+            setAllUsers(data);
+        } catch (err) {
+            console.error("Error fetching users:", err);
+        }
+    };
+
+    const fetchAllReviews = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch("http://localhost:5000/api/admin/reviews", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error("Failed to fetch reviews");
+            const data = await res.json();
+            setAllReviews(data);
+        } catch (err) {
+            console.error("Error fetching reviews:", err);
+        }
+    };
+
+    const handleDeleteReview = async (id) => {
+        if (!window.confirm("Delete this review? This will recompute product and farmer ratings.")) return;
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`http://localhost:5000/api/admin/reviews/${id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error("Failed to delete review");
+            await fetchAllReviews();
+            flashSuccess("Review deleted");
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
     const fetchContactMessages = async () => {
         try {
             const token = localStorage.getItem("token");
@@ -128,6 +175,8 @@ const AdminDashboard = () => {
         fetchServices();
         fetchSchemes();
         fetchContactMessages();
+        fetchAllUsers();
+        fetchAllReviews();
     }, []);
 
     const authHeaders = () => ({
@@ -419,6 +468,18 @@ const AdminDashboard = () => {
                                 {contactMessages.filter((m) => !m.isRead).length}
                             </span>
                         )}
+                    </button>
+                    <button
+                        className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('users')}
+                    >
+                        All Users
+                    </button>
+                    <button
+                        className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('reviews')}
+                    >
+                        Product Reviews
                     </button>
                 </div>
 
@@ -769,6 +830,152 @@ const AdminDashboard = () => {
                                                 Edit
                                             </button>
                                             <button className="btn btn-reject" onClick={() => handleDeleteScheme(scheme._id)}>
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'users' && (
+                    <div className="management-section">
+                        <h2>All Users</h2>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                            {[
+                                { key: 'all', label: `All (${allUsers.length})` },
+                                { key: 'customer', label: `Customers (${allUsers.filter(u => u.userType === 'customer').length})` },
+                                { key: 'farmer', label: `Farmers (${allUsers.filter(u => u.userType === 'farmer').length})` },
+                                { key: 'admin', label: `Admins (${allUsers.filter(u => u.userType === 'admin').length})` },
+                            ].map((f) => (
+                                <button
+                                    key={f.key}
+                                    className={`tab-btn ${usersFilter === f.key ? 'active' : ''}`}
+                                    onClick={() => setUsersFilter(f.key)}
+                                >
+                                    {f.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="management-list">
+                            {allUsers.length === 0 ? (
+                                <p>No users found.</p>
+                            ) : (
+                                allUsers
+                                    .filter((u) => usersFilter === 'all' || u.userType === usersFilter)
+                                    .map((u) => (
+                                        <div key={u._id} className="management-item">
+                                            <div className="management-item-info">
+                                                <div style={{ flex: 1 }}>
+                                                    <h4>
+                                                        {u.fullName}
+                                                        <span
+                                                            className="status-badge"
+                                                            style={{
+                                                                marginLeft: '0.5rem',
+                                                                fontSize: '0.7rem',
+                                                                padding: '2px 8px',
+                                                                background: u.userType === 'admin' ? '#1976d2' : u.userType === 'farmer' ? '#2e7d32' : '#7b1fa2',
+                                                                color: 'white',
+                                                                borderRadius: '12px',
+                                                                textTransform: 'uppercase',
+                                                            }}
+                                                        >
+                                                            {u.userType}
+                                                        </span>
+                                                        {u.userType === 'farmer' && u.verification?.status === 'approved' && (
+                                                            <span
+                                                                style={{
+                                                                    marginLeft: '0.5rem',
+                                                                    fontSize: '0.7rem',
+                                                                    padding: '2px 8px',
+                                                                    background: '#43a047',
+                                                                    color: 'white',
+                                                                    borderRadius: '12px',
+                                                                }}
+                                                            >
+                                                                ✓ Verified
+                                                            </span>
+                                                        )}
+                                                    </h4>
+                                                    <p>📧 {u.email}</p>
+                                                    <p>📞 {u.mobile}</p>
+                                                    {u.address && <p>📍 {u.address}</p>}
+                                                    {u.userType === 'farmer' && u.farmerDetails?.farmName && (
+                                                        <p>🌾 Farm: {u.farmerDetails.farmName}{u.farmerDetails.farmLocation ? ` — ${u.farmerDetails.farmLocation}` : ''}</p>
+                                                    )}
+                                                    {u.userType === 'farmer' && (
+                                                        <p>⭐ {Number(u.averageRating || u.rating || 0).toFixed(1)} ({u.totalReviews || 0} reviews)</p>
+                                                    )}
+                                                    <small>Joined: {new Date(u.createdAt).toLocaleDateString()}</small>
+                                                </div>
+                                            </div>
+                                            <div className="management-item-actions">
+                                                <a
+                                                    className="btn btn-approve"
+                                                    href={`mailto:${u.email}`}
+                                                >
+                                                    Email
+                                                </a>
+                                            </div>
+                                        </div>
+                                    ))
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'reviews' && (
+                    <div className="management-section">
+                        <h2>Product Reviews</h2>
+                        <p style={{ color: '#666', marginBottom: '1rem' }}>
+                            Total reviews: {allReviews.length}. Deleting a review will automatically recompute the product's average rating.
+                        </p>
+                        <div className="management-list">
+                            {allReviews.length === 0 ? (
+                                <p>No reviews yet.</p>
+                            ) : (
+                                allReviews.map((rev) => (
+                                    <div key={rev._id} className="management-item">
+                                        <div className="management-item-info">
+                                            <div style={{ flex: 1 }}>
+                                                <h4>
+                                                    {rev.product?.name || 'Deleted product'}{' '}
+                                                    <span style={{ color: '#f5a623' }}>{'⭐'.repeat(rev.rating)}</span>{' '}
+                                                    <small style={{ color: '#666' }}>({rev.rating}/5)</small>
+                                                </h4>
+                                                <p>
+                                                    <strong>By:</strong>{' '}
+                                                    {rev.user?.fullName || 'Unknown user'} &lt;{rev.user?.email || '—'}&gt;
+                                                </p>
+                                                {rev.product?.farmer && (
+                                                    <p>
+                                                        <strong>Seller:</strong>{' '}
+                                                        {rev.product.farmer.fullName} &lt;{rev.product.farmer.email}&gt;
+                                                    </p>
+                                                )}
+                                                <p style={{ whiteSpace: 'pre-wrap' }}>{rev.comment}</p>
+                                                <small>{new Date(rev.createdAt).toLocaleString()}</small>
+                                            </div>
+                                        </div>
+                                        <div className="management-item-actions">
+                                            {rev.product?._id && (
+                                                <a
+                                                    className="btn btn-approve"
+                                                    href={`/product/${rev.product._id}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    View
+                                                </a>
+                                            )}
+                                            <button
+                                                className="btn btn-reject"
+                                                onClick={() => handleDeleteReview(rev._id)}
+                                            >
                                                 Delete
                                             </button>
                                         </div>

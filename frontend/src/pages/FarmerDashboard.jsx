@@ -20,6 +20,21 @@ const FarmerDashboard = () => {
     });
     const [isEditing, setIsEditing] = useState(false);
     const [showAddProduct, setShowAddProduct] = useState(false);
+    const [editingProduct, setEditingProduct] = useState(null);
+    const [editForm, setEditForm] = useState({
+        name: '',
+        price: '',
+        stock: '',
+        quantityUnit: 'kg',
+        category: 'vegetables',
+        description: '',
+    });
+    const [editNewImages, setEditNewImages] = useState([]);
+    const [editNewVideos, setEditNewVideos] = useState([]);
+    const [editRemoveImages, setEditRemoveImages] = useState([]);
+    const [editRemoveVideos, setEditRemoveVideos] = useState([]);
+    const [editSubmitting, setEditSubmitting] = useState(false);
+    const [editError, setEditError] = useState('');
     const navigate = useNavigate();
 
     // State for dynamic data
@@ -267,9 +282,94 @@ const FarmerDashboard = () => {
         setShowAddProduct(false);
     };
 
-    const handleDeleteProduct = (id) => {
-        if (window.confirm('Are you sure you want to delete this product?')) {
-            setProducts(products.filter(p => p.id !== id));
+    const handleDeleteProduct = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this product?')) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || 'Failed to delete product');
+            }
+            setProducts((prev) => prev.filter((p) => p.productId !== id));
+            setSuccessMessage('Product deleted successfully');
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const openEditProduct = (product) => {
+        setEditingProduct(product);
+        setEditForm({
+            name: product.name || '',
+            price: product.price || '',
+            stock: product.stock || '',
+            quantityUnit: product.quantityUnit || 'kg',
+            category: product.category || 'vegetables',
+            description: product.description || '',
+        });
+        setEditNewImages([]);
+        setEditNewVideos([]);
+        setEditRemoveImages([]);
+        setEditRemoveVideos([]);
+        setEditError('');
+    };
+
+    const closeEditProduct = () => {
+        setEditingProduct(null);
+        setEditNewImages([]);
+        setEditNewVideos([]);
+        setEditRemoveImages([]);
+        setEditRemoveVideos([]);
+        setEditError('');
+    };
+
+    const toggleRemoveExistingImage = (url) => {
+        setEditRemoveImages((prev) =>
+            prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+        );
+    };
+
+    const toggleRemoveExistingVideo = (url) => {
+        setEditRemoveVideos((prev) =>
+            prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+        );
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        if (!editingProduct) return;
+        setEditError('');
+        setEditSubmitting(true);
+        try {
+            const token = localStorage.getItem('token');
+            const fd = new FormData();
+            Object.entries(editForm).forEach(([k, v]) => fd.append(k, v));
+            editNewImages.forEach((file) => fd.append('images', file));
+            editNewVideos.forEach((file) => fd.append('videos', file));
+            if (editRemoveImages.length) fd.append('removeImages', JSON.stringify(editRemoveImages));
+            if (editRemoveVideos.length) fd.append('removeVideos', JSON.stringify(editRemoveVideos));
+
+            const res = await fetch(`http://localhost:5000/api/products/${editingProduct.productId}`, {
+                method: 'PUT',
+                headers: { Authorization: `Bearer ${token}` },
+                body: fd,
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to update product');
+
+            await fetchProducts();
+            closeEditProduct();
+            setSuccessMessage('Product updated successfully');
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (err) {
+            setEditError(err.message);
+        } finally {
+            setEditSubmitting(false);
         }
     };
 
@@ -503,11 +603,33 @@ const FarmerDashboard = () => {
                             )}
 
                             <div className="products-grid">
-                                {products.map(product => (
+                                {products.length === 0 ? (
+                                    <p style={{ background: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center', gridColumn: '1 / -1' }}>
+                                        You haven't added any products yet. Click "Add New Product" to get started.
+                                    </p>
+                                ) : products.map(product => (
                                     <div className="product-card" key={product.productId}>
-                                        <div className="product-image">🌾</div>
+                                        <Link
+                                            to={`/product/${product.productId}`}
+                                            className="product-image-link"
+                                            style={{ display: 'block' }}
+                                        >
+                                            <div className="product-image" style={{ overflow: 'hidden' }}>
+                                                {product.images && product.images.length > 0 ? (
+                                                    <img
+                                                        src={product.images[0]}
+                                                        alt={product.name}
+                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                    />
+                                                ) : (
+                                                    <span style={{ fontSize: '3rem' }}>🌾</span>
+                                                )}
+                                            </div>
+                                        </Link>
                                         <div className="product-details">
-                                            <h4>{product.name}</h4>
+                                            <Link to={`/product/${product.productId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                <h4>{product.name}</h4>
+                                            </Link>
                                             <p className="product-category">{product.category}</p>
                                             <p className="product-price">₹{product.price}/{product.quantityUnit}</p>
                                             <div className="product-stats">
@@ -516,11 +638,11 @@ const FarmerDashboard = () => {
                                                 <span>Earnings: ₹{product.totalEarnings}</span>
                                             </div>
                                             <div className="product-rating">
-                                                <span>⭐ {product.rating} ({product.reviews} reviews)</span>
+                                                <span>⭐ {Number(product.rating || 0).toFixed(1)} ({product.reviews} reviews)</span>
                                             </div>
                                         </div>
                                         <div className="product-actions">
-                                            <button className="edit-btn">Edit</button>
+                                            <button className="edit-btn" onClick={() => openEditProduct(product)}>Edit</button>
                                             <button className="delete-btn" onClick={() => handleDeleteProduct(product.productId)}>Delete</button>
                                         </div>
                                     </div>
@@ -850,6 +972,224 @@ const FarmerDashboard = () => {
 
                 </main>
             </div>
+
+            {/* Edit Product Modal */}
+            {editingProduct && (
+                <div className="modal-overlay" onClick={closeEditProduct}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 700 }}>
+                        <div className="modal-header">
+                            <h3>Edit Product</h3>
+                            <button className="close-btn" onClick={closeEditProduct}>×</button>
+                        </div>
+                        <form onSubmit={handleEditSubmit}>
+                            <div className="form-group">
+                                <label>Product Name</label>
+                                <input
+                                    type="text"
+                                    value={editForm.name}
+                                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Price (₹)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={editForm.price}
+                                        onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Unit</label>
+                                    <select
+                                        value={editForm.quantityUnit}
+                                        onChange={(e) => setEditForm({ ...editForm, quantityUnit: e.target.value })}
+                                        required
+                                    >
+                                        {['kg', 'gram', 'litre', 'ml', 'dozen', 'piece', 'bunch', 'quintal'].map((u) => (
+                                            <option key={u} value={u}>{u}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Stock</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={editForm.stock}
+                                        onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Category</label>
+                                    <select
+                                        value={editForm.category}
+                                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                                        required
+                                    >
+                                        {['Vegetables', 'Fruits', 'Grains', 'Pulses', 'Dairy', 'Spices', 'Herbs', 'Oilseeds', 'Other'].map((c) => (
+                                            <option key={c} value={c}>{c}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label>Description</label>
+                                <textarea
+                                    rows="3"
+                                    value={editForm.description}
+                                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                />
+                            </div>
+
+                            {/* Existing Images */}
+                            {editingProduct.images && editingProduct.images.length > 0 && (
+                                <div className="form-group">
+                                    <label>Existing Images (click × to remove)</label>
+                                    <div className="upload-preview">
+                                        {editingProduct.images.map((url) => {
+                                            const removed = editRemoveImages.includes(url);
+                                            return (
+                                                <div
+                                                    key={url}
+                                                    className="preview-item"
+                                                    style={{ opacity: removed ? 0.4 : 1, position: 'relative' }}
+                                                >
+                                                    <img src={url} alt="" className="preview-thumb" style={{ width: 80, height: 80, objectFit: 'cover' }} />
+                                                    <button
+                                                        type="button"
+                                                        className="preview-remove"
+                                                        onClick={() => toggleRemoveExistingImage(url)}
+                                                        title={removed ? 'Undo remove' : 'Remove'}
+                                                    >
+                                                        {removed ? '↺' : '×'}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="form-group">
+                                <label>Add More Images (multiple allowed)</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={(e) => {
+                                        const incoming = Array.from(e.target.files);
+                                        setEditNewImages((prev) => [...prev, ...incoming]);
+                                        e.target.value = '';
+                                    }}
+                                />
+                                {editNewImages.length > 0 && (
+                                    <div className="upload-preview">
+                                        {editNewImages.map((file, idx) => (
+                                            <div key={idx} className="preview-item">
+                                                <img
+                                                    src={URL.createObjectURL(file)}
+                                                    alt=""
+                                                    className="preview-thumb"
+                                                    style={{ width: 80, height: 80, objectFit: 'cover' }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="preview-remove"
+                                                    onClick={() => setEditNewImages((prev) => prev.filter((_, i) => i !== idx))}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Existing Videos */}
+                            {editingProduct.videos && editingProduct.videos.length > 0 && (
+                                <div className="form-group">
+                                    <label>Existing Videos (click × to remove)</label>
+                                    <div className="upload-preview">
+                                        {editingProduct.videos.map((url) => {
+                                            const removed = editRemoveVideos.includes(url);
+                                            return (
+                                                <div
+                                                    key={url}
+                                                    className="preview-item"
+                                                    style={{ opacity: removed ? 0.4 : 1, position: 'relative' }}
+                                                >
+                                                    <video src={url} muted className="preview-thumb" style={{ width: 80, height: 80, objectFit: 'cover' }} />
+                                                    <button
+                                                        type="button"
+                                                        className="preview-remove"
+                                                        onClick={() => toggleRemoveExistingVideo(url)}
+                                                        title={removed ? 'Undo remove' : 'Remove'}
+                                                    >
+                                                        {removed ? '↺' : '×'}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="form-group">
+                                <label>Add More Videos (multiple allowed)</label>
+                                <input
+                                    type="file"
+                                    accept="video/*"
+                                    multiple
+                                    onChange={(e) => {
+                                        const incoming = Array.from(e.target.files);
+                                        setEditNewVideos((prev) => [...prev, ...incoming]);
+                                        e.target.value = '';
+                                    }}
+                                />
+                                {editNewVideos.length > 0 && (
+                                    <div className="upload-preview">
+                                        {editNewVideos.map((file, idx) => (
+                                            <div key={idx} className="preview-item">
+                                                <video
+                                                    src={URL.createObjectURL(file)}
+                                                    muted
+                                                    className="preview-thumb"
+                                                    style={{ width: 80, height: 80, objectFit: 'cover' }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="preview-remove"
+                                                    onClick={() => setEditNewVideos((prev) => prev.filter((_, i) => i !== idx))}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {editError && <p style={{ color: 'crimson' }}>{editError}</p>}
+
+                            <div className="modal-actions">
+                                <button type="submit" className="submit-btn" disabled={editSubmitting}>
+                                    {editSubmitting ? 'Saving...' : 'Save Changes'}
+                                </button>
+                                <button type="button" className="cancel-btn" onClick={closeEditProduct}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Verification Modal */}
             {showVerificationModal && (

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path 'd:\\\\AgroFresh\\\\backend\\\\src' -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object FullName | Format-Table -AutoSize -Wrap)",
+      "PowerShell(Get-ChildItem -Path 'd:\\\\AgroFresh\\\\frontend\\\\src' -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object FullName | Format-Table -AutoSize -Wrap)",
+      "Bash(node --check src/controllers/adminController.js)",
+      "Bash(node --check src/controllers/productController.js)",
+      "Bash(node --check src/controllers/farmerController.js)",
+      "Bash(node --check src/routes/productRoutes.js)",
+      "Bash(node --check src/routes/adminRoutes.js)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

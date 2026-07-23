@@ -64,8 +64,7 @@ export const getFarmerProducts = async (req, res) => {
     const farmerId = req.user._id;
 
     const products = await Product.find({ farmer: farmerId })
-      .sort({ createdAt: -1 })
-      .select("name price stock category images rating numReviews createdAt");
+      .sort({ createdAt: -1 });
 
     // For each product, calculate total sold and earnings
     const productsWithSales = await Promise.all(
@@ -95,8 +94,11 @@ export const getFarmerProducts = async (req, res) => {
           name: product.name,
           price: product.price,
           stock: product.stock,
+          quantityUnit: product.quantityUnit,
+          description: product.description,
           category: product.category,
           images: product.images,
+          videos: product.videos,
           totalSold,
           totalEarnings,
           rating: product.rating,

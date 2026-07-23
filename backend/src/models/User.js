@@ -75,6 +75,17 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
 
+    // Direct farmer ratings (from "Rate this farmer" on product page)
+    farmerAvgRating: {
+      type: Number,
+      default: 0,
+    },
+
+    farmerRatingCount: {
+      type: Number,
+      default: 0,
+    },
+
     bankDetails: {
       accountNumber: String,
       ifscCode: String,
