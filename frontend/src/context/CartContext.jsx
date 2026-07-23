@@ -37,7 +37,7 @@ export const CartProvider = ({ children }) => {
                     product: it.product._id || it.product,
                     quantity: it.quantity,
                 }));
-                await fetch("http://localhost:5000/api/cart", {
+                await fetch(`${import.meta.env.VITE_API_URL}/api/cart`, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
@@ -110,7 +110,7 @@ export const CartProvider = ({ children }) => {
         writeLocal([]);
         setItems([]);
         if (isLoggedIn()) {
-            fetch("http://localhost:5000/api/cart", {
+            fetch(`${import.meta.env.VITE_API_URL}/api/cart`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             }).catch(() => {});
@@ -125,7 +125,7 @@ export const CartProvider = ({ children }) => {
                 product: it.product._id || it.product,
                 quantity: it.quantity,
             }));
-            const res = await fetch("http://localhost:5000/api/cart/merge", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cart/merge`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

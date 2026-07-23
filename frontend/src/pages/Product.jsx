@@ -35,7 +35,7 @@ const Product = () => {
   const checkWishlist = async () => {
     if (!token || userType !== 'customer') return;
     try {
-      const res = await fetch('http://localhost:5000/api/wishlist', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/wishlist`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
@@ -59,14 +59,14 @@ const Product = () => {
     }
     try {
       if (inWishlist) {
-        const res = await fetch(`http://localhost:5000/api/wishlist/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/wishlist/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error('Failed');
         setInWishlist(false);
       } else {
-        const res = await fetch('http://localhost:5000/api/wishlist', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/wishlist`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ const Product = () => {
 
   const fetchReviews = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/product/${id}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews/product/${id}`);
       if (!res.ok) throw new Error('Failed to load reviews');
       const data = await res.json();
       setReviews(data);
@@ -96,7 +96,7 @@ const Product = () => {
   const fetchFarmerRatings = async (farmerId) => {
     if (!farmerId) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/farmers/${farmerId}/ratings`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/farmers/${farmerId}/ratings`);
       if (!res.ok) throw new Error('Failed to load farmer ratings');
       const data = await res.json();
       setFarmerRatingStats(data);
@@ -131,7 +131,7 @@ const Product = () => {
     try {
       setSubmittingFarmerRating(true);
       const res = await fetch(
-        `http://localhost:5000/api/farmers/${product.farmer._id}/ratings`,
+        `${import.meta.env.VITE_API_URL}/api/farmers/${product.farmer._id}/ratings`,
         {
           method: 'POST',
           headers: {
@@ -160,7 +160,7 @@ const Product = () => {
 
   const fetchProduct = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${id}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`);
       const data = await res.json();
       setProduct(data);
 
@@ -168,7 +168,7 @@ const Product = () => {
         fetchFarmerRatings(data.farmer._id);
       }
 
-      const res2 = await fetch(`http://localhost:5000/api/products`);
+      const res2 = await fetch(`${import.meta.env.VITE_API_URL}/api/products`);
       const allProducts = await res2.json();
       setRelatedProducts(
         allProducts.filter(
@@ -214,7 +214,7 @@ const Product = () => {
     try {
       setSubmittingReview(true);
       const res = await fetch(
-        `http://localhost:5000/api/reviews/product/${id}`,
+        `${import.meta.env.VITE_API_URL}/api/reviews/product/${id}`,
         {
           method: 'POST',
           headers: {

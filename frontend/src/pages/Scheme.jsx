@@ -9,7 +9,7 @@ const Schemes = () => {
     useEffect(() => {
         const fetchSchemes = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/schemes');
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/schemes`);
                 if (!res.ok) throw new Error('Failed to load schemes');
                 const data = await res.json();
                 setAllSchemes(data);

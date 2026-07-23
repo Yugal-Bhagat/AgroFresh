@@ -19,7 +19,7 @@ const MyOrders = () => {
             const token = localStorage.getItem("token");
             if (!token) throw new Error("Please login to see orders");
 
-            const res = await fetch("http://localhost:5000/api/orders/my", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/my`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) throw new Error("Failed to load orders");
@@ -41,7 +41,7 @@ const MyOrders = () => {
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(
-                `http://localhost:5000/api/orders/${orderId}/cancel`,
+                `${import.meta.env.VITE_API_URL}/api/orders/${orderId}/cancel`,
                 {
                     method: "PUT",
                     headers: { Authorization: `Bearer ${token}` },

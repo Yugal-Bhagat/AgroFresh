@@ -36,9 +36,9 @@ const About = () => {
         const fetchAll = async () => {
             try {
                 const [fbRes, statsRes, svcRes] = await Promise.all([
-                    fetch("http://localhost:5000/api/feedback?limit=6"),
-                    fetch("http://localhost:5000/api/stats"),
-                    fetch("http://localhost:5000/api/services"),
+                    fetch(`${import.meta.env.VITE_API_URL}/api/feedback?limit=6`),
+                    fetch(`${import.meta.env.VITE_API_URL}/api/stats`),
+                    fetch(`${import.meta.env.VITE_API_URL}/api/services`),
                 ]);
 
                 if (fbRes.ok) {

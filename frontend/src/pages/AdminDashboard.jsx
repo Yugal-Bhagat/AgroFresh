@@ -46,7 +46,7 @@ const AdminDashboard = () => {
                 return;
             }
 
-            const res = await fetch("http://localhost:5000/api/admin/pending-farmers", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/pending-farmers`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
         try {
             const token = localStorage.getItem("token");
 
-            const res = await fetch("http://localhost:5000/api/admin/pending-verifications", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/pending-verifications`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -91,7 +91,7 @@ const AdminDashboard = () => {
 
     const fetchServices = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/services");
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/services`);
             if (!res.ok) throw new Error("Failed to fetch services");
             const data = await res.json();
             setServices(data);
@@ -102,7 +102,7 @@ const AdminDashboard = () => {
 
     const fetchSchemes = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/schemes");
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/schemes`);
             if (!res.ok) throw new Error("Failed to fetch schemes");
             const data = await res.json();
             setSchemes(data);
@@ -114,7 +114,7 @@ const AdminDashboard = () => {
     const fetchAllUsers = async () => {
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch("http://localhost:5000/api/admin/users", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) throw new Error("Failed to fetch users");
@@ -128,7 +128,7 @@ const AdminDashboard = () => {
     const fetchAllReviews = async () => {
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch("http://localhost:5000/api/admin/reviews", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/reviews`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) throw new Error("Failed to fetch reviews");
@@ -143,7 +143,7 @@ const AdminDashboard = () => {
         if (!window.confirm("Delete this review? This will recompute product and farmer ratings.")) return;
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`http://localhost:5000/api/admin/reviews/${id}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/reviews/${id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -158,7 +158,7 @@ const AdminDashboard = () => {
     const fetchContactMessages = async () => {
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch("http://localhost:5000/api/contact", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/contact`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) throw new Error("Failed to fetch contact messages");
@@ -193,8 +193,8 @@ const AdminDashboard = () => {
         e.preventDefault();
         try {
             const url = editingServiceId
-                ? `http://localhost:5000/api/services/${editingServiceId}`
-                : "http://localhost:5000/api/services";
+                ? `${import.meta.env.VITE_API_URL}/api/services/${editingServiceId}`
+                : `${import.meta.env.VITE_API_URL}/api/services`;
             const method = editingServiceId ? "PUT" : "POST";
             const res = await fetch(url, {
                 method,
@@ -219,7 +219,7 @@ const AdminDashboard = () => {
     const handleDeleteService = async (id) => {
         if (!window.confirm("Delete this service?")) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/services/${id}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/services/${id}`, {
                 method: "DELETE",
                 headers: authHeaders(),
             });
@@ -235,8 +235,8 @@ const AdminDashboard = () => {
         e.preventDefault();
         try {
             const url = editingSchemeId
-                ? `http://localhost:5000/api/schemes/${editingSchemeId}`
-                : "http://localhost:5000/api/schemes";
+                ? `${import.meta.env.VITE_API_URL}/api/schemes/${editingSchemeId}`
+                : `${import.meta.env.VITE_API_URL}/api/schemes`;
             const method = editingSchemeId ? "PUT" : "POST";
             const res = await fetch(url, {
                 method,
@@ -273,7 +273,7 @@ const AdminDashboard = () => {
     const handleDeleteScheme = async (id) => {
         if (!window.confirm("Delete this scheme?")) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/schemes/${id}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/schemes/${id}`, {
                 method: "DELETE",
                 headers: authHeaders(),
             });
@@ -287,7 +287,7 @@ const AdminDashboard = () => {
 
     const handleMarkMessageRead = async (id) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/contact/${id}/read`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/${id}/read`, {
                 method: "PUT",
                 headers: authHeaders(),
             });
@@ -301,7 +301,7 @@ const AdminDashboard = () => {
     const handleDeleteMessage = async (id) => {
         if (!window.confirm("Delete this message?")) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/contact/${id}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/${id}`, {
                 method: "DELETE",
                 headers: authHeaders(),
             });
@@ -318,7 +318,7 @@ const AdminDashboard = () => {
             setVerifyingFarmerId(userId);
             const token = localStorage.getItem("token");
 
-            const res = await fetch(`http://localhost:5000/api/admin/verify/${userId}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/verify/${userId}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -352,7 +352,7 @@ const AdminDashboard = () => {
             const token = localStorage.getItem("token");
 
             const res = await fetch(
-                `http://localhost:5000/api/admin/process-verification/${applicationId}`,
+                `${import.meta.env.VITE_API_URL}/api/admin/process-verification/${applicationId}`,
                 {
                     method: "PUT",
                     headers: {

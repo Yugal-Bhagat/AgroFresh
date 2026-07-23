@@ -108,7 +108,7 @@ const AddProduct = () => {
             images.forEach((file) => fd.append("images", file));
             videos.forEach((file) => fd.append("videos", file));
 
-            const res = await fetch("http://localhost:5000/api/products", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
                 body: fd,

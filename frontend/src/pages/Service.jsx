@@ -9,7 +9,7 @@ function Service() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/services");
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/services`);
         if (!res.ok) throw new Error("Failed to load services");
         const data = await res.json();
         setServices(data);

@@ -100,7 +100,7 @@ const FarmerDashboard = () => {
     const fetchDashboardData = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/farmer/dashboard', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/farmer/dashboard`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -116,7 +116,7 @@ const FarmerDashboard = () => {
     const fetchFarmerProfile = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/auth/profile', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/profile`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -143,7 +143,7 @@ const FarmerDashboard = () => {
     const fetchProducts = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/farmer/products', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/farmer/products`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -159,7 +159,7 @@ const FarmerDashboard = () => {
     const fetchOrders = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/farmer/orders', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/farmer/orders`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -175,7 +175,7 @@ const FarmerDashboard = () => {
     const fetchEarnings = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/farmer/earnings', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/farmer/earnings`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -191,7 +191,7 @@ const FarmerDashboard = () => {
     const fetchRatings = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/farmer/ratings', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/farmer/ratings`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -207,7 +207,7 @@ const FarmerDashboard = () => {
     const fetchVerificationStatus = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/farmer/verification-status', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/farmer/verification-status`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -224,7 +224,7 @@ const FarmerDashboard = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/farmer/apply-verification', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/farmer/apply-verification`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -286,7 +286,7 @@ const FarmerDashboard = () => {
         if (!window.confirm('Are you sure you want to delete this product?')) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -354,7 +354,7 @@ const FarmerDashboard = () => {
             if (editRemoveImages.length) fd.append('removeImages', JSON.stringify(editRemoveImages));
             if (editRemoveVideos.length) fd.append('removeVideos', JSON.stringify(editRemoveVideos));
 
-            const res = await fetch(`http://localhost:5000/api/products/${editingProduct.productId}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${editingProduct.productId}`, {
                 method: 'PUT',
                 headers: { Authorization: `Bearer ${token}` },
                 body: fd,
@@ -752,7 +752,7 @@ const FarmerDashboard = () => {
                                                         try {
                                                             const token = localStorage.getItem('token');
                                                             const res = await fetch(
-                                                                `http://localhost:5000/api/orders/${order.orderId}/status`,
+                                                                `${import.meta.env.VITE_API_URL}/api/orders/${order.orderId}/status`,
                                                                 {
                                                                     method: 'PUT',
                                                                     headers: {

@@ -18,7 +18,7 @@ const CustomerDashboard = () => {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
-                const res = await fetch('http://localhost:5000/api/orders/my', {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/my`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (!res.ok) return;
@@ -66,7 +66,7 @@ const CustomerDashboard = () => {
 
         const fetchProfile = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/auth/profile', {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/profile`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (!res.ok) return;
@@ -87,7 +87,7 @@ const CustomerDashboard = () => {
 
         const fetchWishlist = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/wishlist', {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/wishlist`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (!res.ok) return;
@@ -115,7 +115,7 @@ const CustomerDashboard = () => {
     const removeFromWishlist = async (productId) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:5000/api/wishlist/${productId}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/wishlist/${productId}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -129,7 +129,7 @@ const CustomerDashboard = () => {
     const saveProfile = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/auth/profile', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
