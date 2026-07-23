@@ -5,8 +5,11 @@ import './Product.css';
 
 const Product = () => {
   const { id } = useParams();
+<<<<<<< HEAD
   const navigate = useNavigate();
   const { addItem } = useCart();
+=======
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -181,9 +184,34 @@ const Product = () => {
   };
 
   useEffect(() => {
+<<<<<<< HEAD
     fetchProduct();
     fetchReviews();
     checkWishlist();
+=======
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/products/${id}`);
+        const data = await res.json();
+
+        setProduct(data);
+        setReviews([]); // until backend reviews
+
+        const res2 = await fetch(`http://localhost:5000/api/products`);
+        const allProducts = await res2.json();
+
+        const filtered = allProducts.filter(
+          (p) => p.category === data.category && p._id !== data._id
+        );
+
+        setRelatedProducts(filtered);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchData();
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
     window.scrollTo(0, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -192,16 +220,22 @@ const Product = () => {
     return <div className="product-not-found">Product not found</div>;
   }
 
+<<<<<<< HEAD
   const productImages = (product.images || []).map((url) => ({ url, type: 'image' }));
   const productVideos = (product.videos || []).map((url) => ({ url, type: 'video' }));
   const media = [...productImages, ...productVideos];
   const activeMedia = media[activeImage];
+=======
+  // ✅ FIXED (no fake data)
+  const images = product.images || [];
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
 
   const handleQuantityChange = (e) => {
     const val = parseInt(e.target.value);
     if (val > 0 && val <= product.stock) setQuantity(val);
   };
 
+<<<<<<< HEAD
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     setReviewError('');
@@ -251,6 +285,29 @@ const Product = () => {
             reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
           ).toFixed(1)
         : '0.0';
+=======
+  const handleReviewSubmit = (e) => {
+    e.preventDefault();
+
+    const review = {
+      id: Date.now(),
+      user: newReview.name,
+      rating: newReview.rating,
+      comment: newReview.comment,
+      date: new Date().toISOString().split('T')[0],
+    };
+
+    setReviews([review, ...reviews]);
+    setNewReview({ name: '', rating: 5, comment: '' });
+    setShowReviewForm(false);
+  };
+
+  const totalReviews = reviews.length;
+  const avgRating =
+    totalReviews > 0
+      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
+      : product.rating;
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
 
   return (
     <div className="product-page">
@@ -268,6 +325,7 @@ const Product = () => {
           {/* LEFT */}
           <div className="product-gallery">
             <div className="main-image">
+<<<<<<< HEAD
               {activeMedia?.type === 'video' ? (
                 <video
                   src={activeMedia.url}
@@ -285,9 +343,23 @@ const Product = () => {
             <div className="thumbnail-list">
               {media.map((m, idx) => (
                 <div
+=======
+              <img
+                src={images[activeImage] || "https://via.placeholder.com/200"}
+                alt={product.name}
+              />
+            </div>
+
+            <div className="thumbnail-list">
+              {images.map((img, idx) => (
+                <img
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
                   key={idx}
+                  src={img}
+                  alt=""
                   className={`thumbnail ${idx === activeImage ? 'active' : ''}`}
                   onClick={() => setActiveImage(idx)}
+<<<<<<< HEAD
                   style={{ position: 'relative', cursor: 'pointer' }}
                 >
                   {m.type === 'video' ? (
@@ -308,6 +380,9 @@ const Product = () => {
                     <img src={m.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   )}
                 </div>
+=======
+                />
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
               ))}
             </div>
           </div>
@@ -318,7 +393,11 @@ const Product = () => {
 
             <div className="product-rating">
               <span className="rating-stars">⭐ {avgRating}</span>
+<<<<<<< HEAD
               <span className="rating-count">({totalReviews} reviews)</span>
+=======
+              <span className="rating-count">({product.numReviews} reviews)</span>
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
             </div>
 
             <div className="product-price-section">
@@ -335,6 +414,7 @@ const Product = () => {
                   {product.farmer?.verification?.status === "approved" && (
                     <span className="verified-badge-large">✓</span>
                   )}
+<<<<<<< HEAD
                 </span>
                 <span className="seller-farmer-rating" style={{
                   marginLeft: '0.75rem',
@@ -350,6 +430,8 @@ const Product = () => {
                   <small style={{ fontWeight: 400 }}>
                     Farmer · {farmerRatingStats.count || product.farmer?.farmerRatingCount || 0} ratings
                   </small>
+=======
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
                 </span>
               </div>
 
@@ -393,6 +475,7 @@ const Product = () => {
               </div>
 
               <div className="action-buttons">
+<<<<<<< HEAD
                 <button
                   className="add-to-cart-btn"
                   disabled={product.stock < 1}
@@ -444,6 +527,10 @@ const Product = () => {
                 >
                   {inWishlist ? '❤️' : '🤍'}
                 </button>
+=======
+                <button className="add-to-cart-btn">Add to Cart</button>
+                <button className="buy-now-btn">Buy Now</button>
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
               </div>
             </div>
 
@@ -457,6 +544,7 @@ const Product = () => {
           <div className="product-sidebar">
             <div className="seller-card">
               <h4>Seller Information</h4>
+<<<<<<< HEAD
               <p><strong>{product.farmer?.fullName}</strong>
                 {product.farmer?.verification?.status === 'approved' && (
                   <span style={{ marginLeft: 6, color: '#2e7d32' }}>✓</span>
@@ -607,6 +695,13 @@ const Product = () => {
                   </div>
                 </div>
               )}
+=======
+              <p><strong>{product.farmer?.fullName}</strong></p>
+              <p>📍 {product.farmer?.address}</p>
+              <p>⭐ {product.rating}</p>
+              <p>📞 {product.farmer?.mobile}</p>
+              <p>📦 Ships within 24 hours</p>
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
             </div>
 
             <div className="offer-card">
@@ -657,6 +752,7 @@ const Product = () => {
               <form onSubmit={handleReviewSubmit}>
 
                 <div className="form-group">
+<<<<<<< HEAD
                   <label>Your Rating</label>
                   <select
                     value={newReview.rating}
@@ -670,6 +766,18 @@ const Product = () => {
                     <option value="2">⭐⭐ (2)</option>
                     <option value="1">⭐ (1)</option>
                   </select>
+=======
+                  <label>Your Name</label>
+                  <input
+                    type="text"
+                    value={newReview.name}
+                    onChange={(e) =>
+                      setNewReview({ ...newReview, name: e.target.value })
+                    }
+                    placeholder="Enter your name"
+                    required
+                  />
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
                 </div>
 
                 <div className="form-group">
@@ -684,6 +792,7 @@ const Product = () => {
                   />
                 </div>
 
+<<<<<<< HEAD
                 {reviewError && (
                   <p style={{ color: 'crimson' }}>{reviewError}</p>
                 )}
@@ -694,6 +803,10 @@ const Product = () => {
                   disabled={submittingReview || !token}
                 >
                   {submittingReview ? 'Submitting...' : 'Submit Review'}
+=======
+                <button type="submit" className="submit-review-btn">
+                  Submit Review
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
                 </button>
 
               </form>
@@ -703,6 +816,7 @@ const Product = () => {
           <div className="reviews-list">
             {reviews.length > 0 ? (
               reviews.map((r) => (
+<<<<<<< HEAD
                 <div key={r._id} className="review-card">
                   <p>
                     <strong>{r.user?.fullName || 'Anonymous'}</strong>
@@ -715,6 +829,10 @@ const Product = () => {
                       {new Date(r.createdAt).toLocaleDateString()}
                     </small>
                   </p>
+=======
+                <div key={r.id} className="review-card">
+                  <p><strong>{r.user}</strong></p>
+>>>>>>> 19932e9735570b197d18b2e47e5846678e7e99c6
                   <p>{r.comment}</p>
                 </div>
               ))
